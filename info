@@ -1,0 +1,2 @@
+to run ts run 
+npx tsx /path/to/file

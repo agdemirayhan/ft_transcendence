@@ -1,0 +1,40 @@
+version: '0.1'
+
+services:
+ front:
+  image: 
+  container_name:
+  working_dir:
+  environment:
+  volumes:
+  ports:
+  restart: unless-stopped
+  networks: backend
+  depends_on:
+   - back
+ back:
+  image:
+  container_name:
+  working_dir:
+  command:
+  environment:
+  volumes:
+  ports:
+  restart: unless-stopped
+  networks: backend
+  depends_on:
+ nginx:
+  image:
+  container_name:nginx
+  volumes:
+  ports:
+  restart:unless-stopped
+  nnetworks: backend
+  depends_on: back
+
+volumes:
+ data:
+ uploads:
+
+networks:
+ backend:

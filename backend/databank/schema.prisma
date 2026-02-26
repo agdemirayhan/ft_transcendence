@@ -1,0 +1,29 @@
+generator client {
+	provider = "prisma-client-js"
+}
+
+datasource db {
+	provider = "postgresql"
+}
+
+model USER {
+	id	Int	@id @default(autoincrement())
+	createdAt DateTime @default(now())
+	email String @unique
+	username String @unique
+	twoFA Boolean? @default(false)
+	following Int @default(0)
+	followers Int @default(0)
+	likes Int @default(0)
+	blocked Int[]
+	blocking Int[]
+}
+
+model Msg {
+	id Int @id @default(autoincrement())
+	history String[]
+	msg String
+	seen Boolean @default(false)
+	createdAt DateTime @default(now())
+	partner Int
+}

@@ -1,5 +1,9 @@
 import { TOTP } from 'otpauth';
 import QRCode from 'qrcode';
+import Test from "qrcode-terminal";
+import readline from "node:readline/promises"
+import {stdin as input, stdout as output } from "node:process"
+
 
 export interface TwoFactorAuth
 {
@@ -29,3 +33,17 @@ export function verifyToken(token: string, secret: string): boolean
 	const delta = totp.validate({token, window: 1});
 	return delta !== null;
 }
+
+
+async function run() {
+	const result = await generateSecret("ldick@student.42heilbronn.de");
+	const rl = readline.createInterface({input, output});
+	Test.generate(result.otpauthUrl, {small: true});
+	const n  = await rl.question("enter code: ");
+	n.trim();
+	const isvalid = verifyToken(n, result.secret);
+	console.log(isvalid ? "yes" : "no");
+	rl.close()
+}
+
+run();
