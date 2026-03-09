@@ -4,3 +4,4 @@ dist
 backend/.env
 backend/dist
 backend/node_modules
+*.Identifier
