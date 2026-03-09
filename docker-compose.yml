@@ -33,5 +33,19 @@ services:
       - "${BACKEND_PORT:-3000}:3000"
     command: sh -c "npx prisma db push && npm run start:prod"
 
+  frontend:
+    build:
+      context: ./frontend
+    container_name: ft_transcendence_frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    env_file:
+      - .env
+    environment:
+      NEXT_PUBLIC_API_URL: "http://localhost:${BACKEND_PORT:-3000}"
+    ports:
+      - "${FRONTEND_PORT:-3001}:3000"
+
 volumes:
   postgres_data:
