@@ -302,3 +302,70 @@ button:active {
   border-top: 1px solid var(--border);
   background: rgba(255,255,255,0.02);
 } 
+
+
+/* LOGIN/SIGNUP PAGE */
+
+.authPage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+}
+
+.authCard {
+  width: 100%;
+  max-width: 400px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 32px;
+}
+
+.authTabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.authTab {
+  flex: 1;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.authTab.active {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
+.authFields {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.authInput {
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--input);
+  color: var(--text);
+  font-size: 14px;
+  outline: none;
+}
+
+.authInput:focus {
+  border-color: var(--accent);
+}
+
+.authError {
+  color: #f87171;
+  font-size: 13px;
+}
