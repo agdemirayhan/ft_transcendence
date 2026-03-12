@@ -290,7 +290,7 @@ export default function Home() {
         <aside className="volume" />
       </main>
 
-      <footer className="footer muted">miniSocial • React starter • we’ll migrate to Next.js later</footer>
+      <footer className="footer muted">miniSocial </footer>
     </div>
   );
 }
