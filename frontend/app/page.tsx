@@ -25,8 +25,8 @@ const seedPosts: PostType[] = [
   },
   {
     id: 2,
-    author: "Deniz",
-    handle: "@deniz",
+    author: "Taha",
+    handle: "@tkirmizi",
     time: "5m ago",
     content: "Building small UIs with React is really enjoyable.",
     likes: 7,
@@ -259,9 +259,9 @@ export default function Home() {
           <Card title="Suggestions">
             <div className="suggestions">
               {[
-                { name: "Mert", handle: "@mert" },
-                { name: "Ece", handle: "@ece" },
-                { name: "Seda", handle: "@seda" },
+                { name: "Manuel", handle: "@mhummel" },
+                { name: "Taha", handle: "@tkirmizi" },
+                { name: "Leon", handle: "@ldick" },
               ].map((u) => (
                 <div className="suggestion" key={u.handle}>
                   <div className="row">
