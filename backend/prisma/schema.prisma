@@ -12,6 +12,9 @@ model User {
   email         String   @unique
   username      String   @unique
   passwordHash  String
+  twoFactorEnabled    Boolean  @default(false)
+  twoFactorSecret     String?
+  twoFactorTempSecret String?
   avatarUrl     String?  @default("https://via.placeholder.com/150")
   onlineStatus  Boolean  @default(false)
   createdAt     DateTime @default(now())

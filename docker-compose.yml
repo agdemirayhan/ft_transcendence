@@ -28,7 +28,7 @@ services:
     environment:
       DATABASE_URL: "postgresql://${POSTGRES_USER:-transcendence}:${POSTGRES_PASSWORD:-transcendence}@db:5432/${POSTGRES_DB:-transcendence}?schema=public"
       PORT: "${BACKEND_PORT:-3000}"
-      JWT_SECRET: ${JWT_SECRET}
+      JWT_SECRET: "${JWT_SECRET:-dev-only-change-me}"
     ports:
       - "${BACKEND_PORT:-3000}:3000"
     command: sh -c "npx prisma db push && npm run start:prod"

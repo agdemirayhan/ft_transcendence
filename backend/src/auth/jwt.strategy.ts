@@ -1,6 +1,8 @@
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { PassportStrategy } from '@nestjs/passport';
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
+
+const JWT_SECRET = process.env.JWT_SECRET || 'dev-only-change-me';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -8,11 +10,15 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: process.env.JWT_SECRET!,
+      secretOrKey: JWT_SECRET,
     });
   }
 
   async validate(payload: any) {
+    if (payload.twoFactorPending) {
+      throw new UnauthorizedException('2FA verification required');
+    }
+
     return { id: payload.sub, email: payload.email };
   }
 }

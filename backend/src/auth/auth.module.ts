@@ -8,13 +8,15 @@ import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { PrismaModule } from '../prisma/prisma.module';
 
+const JWT_SECRET = process.env.JWT_SECRET || 'dev-only-change-me';
+
 @Module({
   imports: [
     PrismaModule,
     PassportModule,
     JwtModule.register({
       global: true,
-      secret: process.env.JWT_SECRET,
+      secret: JWT_SECRET,
       signOptions: { expiresIn: '1d' },
     }),
   ],

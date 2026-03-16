@@ -32,9 +32,38 @@ export class AuthService {
 
   async login(user: any) {
     const payload = { sub: user.id, email: user.email };
+
+    if (user.twoFactorEnabled && user.twoFactorSecret) {
+      return {
+        requiresTwoFactor: true,
+        tempToken: this.jwtService.sign(
+          { ...payload, twoFactorPending: true },
+          { expiresIn: '5m' },
+        ),
+      };
+    }
+
     return {
       access_token: this.jwtService.sign(payload),
       user: { id: user.id, email: user.email, username: user.username },
     };
+  }
+
+  async getMe(userId: number) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        twoFactorEnabled: true,
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    return user;
   }
 }

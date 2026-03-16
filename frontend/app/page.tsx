@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
+
 export default function AuthPage() {
   const router = useRouter();
   const [mode, setMode] = useState<"login" | "signup">("login");
@@ -18,8 +20,8 @@ export default function AuthPage() {
 
     try {
       const url = mode === "login"
-        ? "http://localhost:3000/auth/login"
-        : "http://localhost:3000/auth/signup";
+        ? `${API_URL}/auth/login`
+        : `${API_URL}/auth/signup`;
 
       const body = mode === "login"
         ? { email, password }
@@ -39,6 +41,12 @@ export default function AuthPage() {
       }
 
       if (mode === "login") {
+        if (data.requiresTwoFactor && data.tempToken) {
+          sessionStorage.setItem("tempToken", data.tempToken);
+          router.push("/2fa");
+          return;
+        }
+
         localStorage.setItem("token", data.access_token);
         router.push("/home");
       } else {
