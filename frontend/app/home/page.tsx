@@ -182,8 +182,8 @@ export default function Home() {
       <header className="topbar">
         <div className="brand"><img src="/favicon-32x32.png" alt="miniSocial" width={32} height={32} /></div>
         <input className="search" placeholder="Search..." />
-        <button className="btn btnSmall" onClick={() => alert("Login later 🙂")} type="button">
-          Login
+        <button className="btn btnSmall" onClick={() => alert("Search later 🙂")} type="button">
+          Search
         </button>
       </header>
 
