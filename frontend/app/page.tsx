@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Cookies from "js-cookie";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
 
@@ -47,7 +48,7 @@ export default function AuthPage() {
           return;
         }
 
-        localStorage.setItem("token", data.access_token);
+        Cookies.set("token", data.access_token, { expires: 1 });
         router.push("/home");
       } else {
         setMode("login");
