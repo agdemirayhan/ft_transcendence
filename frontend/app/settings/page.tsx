@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { ChangeEvent, useEffect, useState } from "react";
+import Cookies from "js-cookie";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
 
@@ -29,7 +30,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     async function loadProfile() {
-      const token = localStorage.getItem("token");
+      const token = Cookies.get("token");
 
       try {
         const savedLanguage = localStorage.getItem("language") as Language | null;
@@ -79,7 +80,7 @@ export default function SettingsPage() {
     setIsSubmitting(true);
 
     try {
-      const token = localStorage.getItem("token");
+      const token = Cookies.get("token");
       if (!token) {
         throw new Error("No auth token found.");
       }
@@ -112,7 +113,7 @@ export default function SettingsPage() {
     setIsSubmitting(true);
 
     try {
-      const token = localStorage.getItem("token");
+      const token = Cookies.get("token");
       if (!token) {
         throw new Error("No auth token found.");
       }
@@ -149,7 +150,7 @@ export default function SettingsPage() {
     setIsSubmitting(true);
 
     try {
-      const token = localStorage.getItem("token");
+      const token = Cookies.get("token");
       if (!token) {
         throw new Error("No auth token found.");
       }
@@ -186,7 +187,7 @@ export default function SettingsPage() {
     setIsDeleting(true);
 
     try {
-      const token = localStorage.getItem("token");
+      const token = Cookies.get("token");
       if (!token) {
         throw new Error("No auth token found.");
       }
@@ -204,7 +205,7 @@ export default function SettingsPage() {
         throw new Error(data.message || "Could not delete account.");
       }
 
-      localStorage.removeItem("token");
+      Cookies.remove("token");
       localStorage.removeItem("language");
 
       setShowDeleteModal(false);
