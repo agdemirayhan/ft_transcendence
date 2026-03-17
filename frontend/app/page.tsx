@@ -15,9 +15,19 @@ export default function AuthPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  function isValidEmail(email: string): boolean {
+  const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return re.test(email);
+}
+
   async function handleSubmit() {
     setError("");
     setLoading(true);
+
+    if (!isValidEmail(email)) {
+    setError("Please enter a valid email address.");
+    return;
+  }
 
     try {
       const url = mode === "login"

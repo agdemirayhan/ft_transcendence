@@ -358,9 +358,15 @@ button:active {
   border-radius: 8px;
   border: 1px solid var(--border);
   background: var(--input);
+  /* background: green; */
   color: var(--text);
   font-size: 14px;
   outline: none;
+}
+
+.authInput option {
+  background: #1e1e2e;  /* koyu arka plan (tema rengine göre ayarla) */
+  color: #ffffff;        /* beyaz yazı */
 }
 
 .authInput:focus {

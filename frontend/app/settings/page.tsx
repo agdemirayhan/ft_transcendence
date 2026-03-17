@@ -248,7 +248,7 @@ export default function SettingsPage() {
             </label>
             <select
               id="language-select"
-              className="authInput"
+              className="authInput language"
               value={language}
               onChange={handleLanguageChange}
             >
