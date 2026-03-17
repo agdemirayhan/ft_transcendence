@@ -47,3 +47,30 @@ curl -X POST http://localhost:3000/auth/signup \
 npx prisma migrate dev --name init
 npm run start:dev
 ```
+
+## pgAdmin — Database Management
+
+pgAdmin is available for visual database management.
+
+**URL:** `http://localhost:5050`
+
+**Login:**
+- Email: `admin@admin.com`
+- Password: `admin`
+
+**Connecting to the database:**
+1. Click **"Add New Server"**
+2. Enter a name (e.g. `transcendence`)
+3. Go to the **Connection** tab and fill in:
+   - Host: `db`
+   - Port: `5432`
+   - Username: `postgres` (or `POSTGRES_USER` from `.env`)
+   - Password: `POSTGRES_PASSWORD` from `.env`
+4. Click **Save**
+
+**Viewing table data:**
+
+Navigate to:
+`Servers → transcendence → Databases → transcendence → Schemas → public → Tables → users`
+
+Right-click `users` → **View/Edit Data** → **All Rows**
