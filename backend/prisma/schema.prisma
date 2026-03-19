@@ -8,17 +8,74 @@ datasource db {
 }
 
 model User {
-  id            Int      @id @default(autoincrement())
-  email         String   @unique
-  username      String   @unique
-  passwordHash  String
-  twoFactorEnabled    Boolean  @default(false)
+  id                  Int       @id @default(autoincrement())
+  email               String    @unique
+  username            String    @unique
+  passwordHash        String
+  twoFactorEnabled    Boolean   @default(false)
   twoFactorSecret     String?
   twoFactorTempSecret String?
-  avatarUrl     String?  @default("https://via.placeholder.com/150")
-  onlineStatus  Boolean  @default(false)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  avatarUrl           String?   @default("https://via.placeholder.com/150")
+  bio                 String?
+  onlineStatus        Boolean   @default(false)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  posts               Post[]
+  likes               Like[]
+  comments            Comment[]
+  followers           Follow[]  @relation("followers")
+  following           Follow[]  @relation("following")
 
   @@map("users")
+}
+
+model Post {
+  id        Int       @id @default(autoincrement())
+  content   String
+  authorId  Int
+  author    User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  likes     Like[]
+  comments  Comment[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@map("posts")
+}
+
+model Follow {
+  followerId  Int
+  followingId Int
+  createdAt   DateTime @default(now())
+
+  follower    User @relation("following", fields: [followerId],  references: [id], onDelete: Cascade)
+  following   User @relation("followers", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@id([followerId, followingId])
+  @@map("follows")
+}
+
+model Like {
+  userId    Int
+  postId    Int
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@id([userId, postId])
+  @@map("likes")
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  content   String
+  authorId  Int
+  postId    Int
+  createdAt DateTime @default(now())
+
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  post   Post @relation(fields: [postId],   references: [id], onDelete: Cascade)
+
+  @@map("comments")
 }
