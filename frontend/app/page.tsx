@@ -26,6 +26,7 @@ export default function AuthPage() {
 
     if (!isValidEmail(email)) {
     setError("Please enter a valid email address.");
+    setLoading(false);
     return;
   }
 

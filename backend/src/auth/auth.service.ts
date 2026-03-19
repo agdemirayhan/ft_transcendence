@@ -66,4 +66,9 @@ export class AuthService {
 
     return user;
   }
+
+  async deleteAccount(userId: number) {
+    await this.prisma.user.delete({ where: { id: userId } });
+    return { message: "Account deleted." };
+  }
 }

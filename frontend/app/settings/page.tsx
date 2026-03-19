@@ -355,11 +355,12 @@ export default function SettingsPage() {
             zIndex: 1000,
           }}
         >
-          <div
+         <div
             style={{
               width: "100%",
               maxWidth: 420,
-              background: "#fff",
+              background: "var(--card)",
+              border: "1px solid var(--border)",
               borderRadius: 16,
               padding: 20,
               boxShadow: "0 20px 40px rgba(0,0,0,0.2)",
