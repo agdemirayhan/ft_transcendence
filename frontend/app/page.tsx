@@ -16,19 +16,19 @@ export default function AuthPage() {
   const [loading, setLoading] = useState(false);
 
   function isValidEmail(email: string): boolean {
-  const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return re.test(email);
-}
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email);
+  }
 
   async function handleSubmit() {
     setError("");
     setLoading(true);
 
     if (!isValidEmail(email)) {
-    setError("Please enter a valid email address.");
-    setLoading(false);
-    return;
-  }
+      setError("Please enter a valid email address.");
+      setLoading(false);
+      return;
+    }
 
     try {
       const url = mode === "login"
@@ -52,20 +52,19 @@ export default function AuthPage() {
         return;
       }
 
+      // Erfolgreich
       if (mode === "login") {
-        if (data.requiresTwoFactor && data.tempToken) {
-          sessionStorage.setItem("tempToken", data.tempToken);
-          router.push("/2fa");
-          return;
-        }
-
         Cookies.set("token", data.access_token, { expires: 1 });
-        router.push("/home");
+        alert("✅ Login successful!");
+        router.push("/home");        // ändere zu /profile oder /dashboard wenn du willst
       } else {
         setMode("login");
-        setError("Account created! Please login.");
+        setError("Account created! Please login now.");
+        setEmail("");
+        setUsername("");
+        setPassword("");
       }
-    } catch {
+    } catch (err) {
       setError("Could not connect to server.");
     } finally {
       setLoading(false);
