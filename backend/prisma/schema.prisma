@@ -20,6 +20,7 @@ model User {
   onlineStatus        Boolean   @default(false)
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
+  language            String    @default("en")
 
   posts               Post[]
   likes               Like[]
