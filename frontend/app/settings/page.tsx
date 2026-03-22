@@ -52,13 +52,28 @@ export default function SettingsPage() {
     loadProfile();
   }, []);
 
-  function handleLanguageChange(e: ChangeEvent<HTMLSelectElement>) {
+  async function handleLanguageChange(e: ChangeEvent<HTMLSelectElement>) {
     const value = e.target.value as Language;
     setLanguage(value);
     localStorage.setItem("language", value);
     i18n.changeLanguage(value);
     setMessage(t("settings.language_updated"));
     setError("");
+
+    try {
+      const token = Cookies.get("token");
+      if (token) {
+        await fetch(`${API_URL}/auth/language`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ language: value }),
+        });
+      }
+    } catch {
+    }
   }
 
   async function startEnable2FA() {
