@@ -25,5 +25,26 @@
     "language_updated": "Sprache aktualisiert.",
     "back": "← Zurück",
     "qr_scan": "QR-Code generiert. Scannen Sie ihn und geben Sie Ihren 6-stelligen Code ein."
+  },
+  "home": {
+    "search": "Suchen...",
+    "search_btn": "Suchen",
+    "profile": "Profil",
+    "posts": "Beiträge",
+    "followers": "Follower",
+    "following": "Gefolgt",
+    "edit_profile": "Profil bearbeiten",
+    "shortcuts": "Shortcuts",
+    "feed": "Feed",
+    "explore": "Entdecken",
+    "messages": "Nachrichten",
+    "settings": "Einstellungen",
+    "trending": "Trends",
+    "suggestions": "Vorschläge",
+    "follow": "Folgen",
+    "whats_happening": "Was passiert?",
+    "comment": "Kommentar",
+    "share": "Teilen",
+    "just_now": "gerade eben"
   }
 }

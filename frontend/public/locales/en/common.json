@@ -25,5 +25,26 @@
     "language_updated": "Language updated.",
     "back": "← Back",
     "qr_scan": "QR code generated. Scan it and enter your 6-digit code."
+  },
+   "home": {
+    "search": "Search...",
+    "search_btn": "Search",
+    "profile": "Profile",
+    "posts": "Posts",
+    "followers": "Followers",
+    "following": "Following",
+    "edit_profile": "Edit Profile",
+    "shortcuts": "Shortcuts",
+    "feed": "Feed",
+    "explore": "Explore",
+    "messages": "Messages",
+    "settings": "Settings",
+    "trending": "Trending",
+    "suggestions": "Suggestions",
+    "follow": "Follow",
+    "whats_happening": "What's happening?",
+    "comment": "Comment",
+    "share": "Share",
+    "just_now": "just now"
   }
 }

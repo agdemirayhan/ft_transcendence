@@ -25,5 +25,26 @@
     "language_updated": "Dil güncellendi.",
     "back": "← Geri",
     "qr_scan": "QR kodu oluşturuldu. Tarayın ve 6 haneli kodunuzu girin."
+  },
+  "home": {
+    "search": "Ara...",
+    "search_btn": "Ara",
+    "profile": "Profil",
+    "posts": "Gönderi",
+    "followers": "Takipçi",
+    "following": "Takip",
+    "edit_profile": "Profili Düzenle",
+    "shortcuts": "Kısayollar",
+    "feed": "Akış",
+    "explore": "Keşfet",
+    "messages": "Mesajlar",
+    "settings": "Ayarlar",
+    "trending": "Gündem",
+    "suggestions": "Öneriler",
+    "follow": "Takip Et",
+    "whats_happening": "Ne oluyor?",
+    "comment": "Yorum",
+    "share": "Paylaş",
+    "just_now": "şimdi"
   }
 }
