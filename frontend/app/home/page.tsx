@@ -1,9 +1,11 @@
 "use client";
 
 import Avatar from "@/components/Avatar";
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import { HeartIcon as HeartSolid } from "@heroicons/react/24/solid";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
+import "../i18n";
 
 type PostType = {
   id: number;
@@ -36,15 +38,6 @@ const seedPosts: PostType[] = [
   },
 ];
 
-// function Avatar({ name }: { name: string }) {
-//   const initials = useMemo(() => {
-//     const parts = name.trim().split(/\s+/);
-//     return (parts[0]?.[0] ?? "U") + (parts[1]?.[0] ?? "");
-//   }, [name]);
-
-//   return <div className="avatar">{initials.toUpperCase()}</div>;
-// }
-
 function Card({ title, children }: { title?: string; children: React.ReactNode }) {
   return (
     <div className="card">
@@ -56,6 +49,7 @@ function Card({ title, children }: { title?: string; children: React.ReactNode }
 
 function PostComposer({ onPost }: { onPost: (content: string) => void }) {
   const [text, setText] = useState("");
+  const { t } = useTranslation();
 
   function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -74,16 +68,15 @@ function PostComposer({ onPost }: { onPost: (content: string) => void }) {
             value={text}
             onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setText(e.target.value)}
             className="textarea"
-            placeholder="What's happening?"
+            placeholder={t("home.whats_happening")}
             rows={3}
             maxLength={240}
           />
         </div>
-
         <div className="composerBottom">
           <span className="muted">{text.length}/240</span>
           <button className="btn" type="submit">
-            Post
+            {t("home.search_btn") === "Search" ? "Post" : t("home.search_btn")}
           </button>
         </div>
       </form>
@@ -98,6 +91,8 @@ function Post({
   post: PostType;
   onToggleLike: (id: number) => void;
 }) {
+  const { t } = useTranslation();
+
   return (
     <div className="post">
       <Avatar name={post.author} />
@@ -110,9 +105,7 @@ function Post({
             <span className="time">{post.time}</span>
           </div>
         </div>
-
         <div className="postContent">{post.content}</div>
-
         <div className="postActions">
           <button
             className={`iconBtn ${post.liked ? "liked" : ""}`}
@@ -123,22 +116,12 @@ function Post({
             <HeartSolid className={`icon ${post.liked ? "liked" : ""}`} />
           </button>
           <span className="muted">{post.likes}</span>
-
           <span className="spacer" />
-
-          <button
-            className="ghostBtn"
-            onClick={() => alert("We'll add this later 🙂")}
-            type="button"
-          >
-            Comment
+          <button className="ghostBtn" onClick={() => alert("We'll add this later 🙂")} type="button">
+            {t("home.comment")}
           </button>
-          <button
-            className="ghostBtn"
-            onClick={() => alert("We'll add this later 🙂")}
-            type="button"
-          >
-            Share
+          <button className="ghostBtn" onClick={() => alert("We'll add this later 🙂")} type="button">
+            {t("home.share")}
           </button>
         </div>
       </div>
@@ -148,6 +131,7 @@ function Post({
 
 export default function Home() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [posts, setPosts] = useState<PostType[]>(seedPosts);
 
   function addPost(content: string) {
@@ -155,7 +139,7 @@ export default function Home() {
       id: Date.now(),
       author: "You",
       handle: "@you",
-      time: "just now",
+      time: t("home.just_now"),
       content,
       likes: 0,
       liked: false,
@@ -168,11 +152,7 @@ export default function Home() {
       p.map((post) => {
         if (post.id !== id) return post;
         const liked = !post.liked;
-        return {
-          ...post,
-          liked,
-          likes: liked ? post.likes + 1 : Math.max(0, post.likes - 1),
-        };
+        return { ...post, liked, likes: liked ? post.likes + 1 : Math.max(0, post.likes - 1) };
       })
     );
   }
@@ -180,10 +160,12 @@ export default function Home() {
   return (
     <div className="page">
       <header className="topbar">
-        <div className="brand"><img src="/favicon-32x32.png" alt="miniSocial" width={32} height={32} /></div>
-        <input className="search" placeholder="Search..." />
+        <div className="brand">
+          <img src="/favicon-32x32.png" alt="miniSocial" width={32} height={32} />
+        </div>
+        <input className="search" placeholder={t("home.search")} />
         <button className="btn btnSmall" onClick={() => alert("Search later 🙂")} type="button">
-          Search
+          {t("home.search_btn")}
         </button>
       </header>
 
@@ -191,7 +173,7 @@ export default function Home() {
         <aside className="volume" />
 
         <aside className="left">
-          <Card title="Profile">
+          <Card title={t("home.profile")}>
             <div className="profile">
               <Avatar name="Ayhan" />
               <div>
@@ -199,40 +181,34 @@ export default function Home() {
                 <div className="muted">@ayhan</div>
               </div>
             </div>
-
             <div className="stats">
               <div className="stat">
                 <div className="statNum">12</div>
-                <div className="muted">Posts</div>
+                <div className="muted">{t("home.posts")}</div>
               </div>
               <div className="stat">
                 <div className="statNum">340</div>
-                <div className="muted">Followers</div>
+                <div className="muted">{t("home.followers")}</div>
               </div>
               <div className="stat">
                 <div className="statNum">180</div>
-                <div className="muted">Following</div>
+                <div className="muted">{t("home.following")}</div>
               </div>
             </div>
-
             <button className="btn btnWide" onClick={() => router.push("/profile")} type="button">
-              Edit Profile
+              {t("home.edit_profile")}
             </button>
           </Card>
 
-          <Card title="Shortcuts">
+          <Card title={t("home.shortcuts")}>
             <div className="list">
-              <button className="linkBtn" type="button">
-                Feed
-              </button>
-              <button className="linkBtn" type="button">
-                Explore
-              </button>
+              <button className="linkBtn" type="button">{t("home.feed")}</button>
+              <button className="linkBtn" type="button">{t("home.explore")}</button>
               <button className="linkBtn" onClick={() => router.push("/messages")} type="button">
-                Messages
+                {t("home.messages")}
               </button>
               <button className="linkBtn" onClick={() => router.push("/settings")} type="button">
-                Settings
+                {t("home.settings")}
               </button>
             </div>
           </Card>
@@ -250,7 +226,7 @@ export default function Home() {
         </section>
 
         <aside className="right">
-          <Card title="Trending">
+          <Card title={t("home.trending")}>
             <div className="chips">
               <span className="chip">#react</span>
               <span className="chip">#frontend</span>
@@ -259,7 +235,7 @@ export default function Home() {
             </div>
           </Card>
 
-          <Card title="Suggestions">
+          <Card title={t("home.suggestions")}>
             <div className="suggestions">
               {[
                 { name: "Manuel", handle: "@mhummel" },
@@ -279,7 +255,7 @@ export default function Home() {
                     onClick={() => alert(`${u.name} followed (fake) 🙂`)}
                     type="button"
                   >
-                    Follow
+                    {t("home.follow")}
                   </button>
                 </div>
               ))}
@@ -290,7 +266,7 @@ export default function Home() {
         <aside className="volume" />
       </main>
 
-      <footer className="footer muted">miniSocial </footer>
+      <footer className="footer muted">miniSocial</footer>
     </div>
   );
 }

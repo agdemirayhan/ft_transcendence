@@ -49,6 +49,18 @@ export class AuthService {
     };
   }
 
+  async updateLanguage(userId: number, language: string) {
+    const allowed = ['en', 'tr', 'de'];
+    if (!allowed.includes(language)) {
+      throw new UnauthorizedException('Invalid language');
+    }
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { language },
+    });
+    return { message: 'Language updated.' };
+  }
+
   async getMe(userId: number) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
@@ -57,6 +69,7 @@ export class AuthService {
         email: true,
         username: true,
         twoFactorEnabled: true,
+        language: true,
       },
     });
 
