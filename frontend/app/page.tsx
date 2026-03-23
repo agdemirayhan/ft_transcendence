@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
+import Image from "next/image";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
 
@@ -16,19 +17,19 @@ export default function AuthPage() {
   const [loading, setLoading] = useState(false);
 
   function isValidEmail(email: string): boolean {
-  const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return re.test(email);
-}
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email);
+  }
 
   async function handleSubmit() {
     setError("");
     setLoading(true);
 
     if (!isValidEmail(email)) {
-    setError("Please enter a valid email address.");
-    setLoading(false);
-    return;
-  }
+      setError("Please enter a valid email address.");
+      setLoading(false);
+      return;
+    }
 
     try {
       const url = mode === "login"
@@ -74,6 +75,21 @@ export default function AuthPage() {
 
   return (
     <div className="authPage">
+      {/* ── Brand ── */}
+      <div className="authBrand">
+        <Image
+          src="/android-chrome-192x192.png"
+          alt="miniSocial logo"
+          width={144}
+          height={144}
+          className="authLogo"
+          priority
+        />
+        <h1 className="authLogoText">miniSocial</h1>
+        <p className="authTagline">where the people get social</p>
+      </div>
+
+      {/* ── Card ── */}
       <div className="authCard">
         <div className="authTabs">
           <button
