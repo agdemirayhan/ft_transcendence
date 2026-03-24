@@ -1,11 +1,12 @@
 "use client";
 
 import Avatar from "@/components/Avatar";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { HeartIcon as HeartSolid } from "@heroicons/react/24/solid";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import "../i18n";
+import Cookies from "js-cookie";
 
 type PostType = {
   id: number;
@@ -129,10 +130,50 @@ function Post({
   );
 }
 
+function LogoutModal({ onConfirm, onCancel }: { onConfirm: () => void; onCancel: () => void }) {
+  const { t } = useTranslation();
+
+   return (
+    <div style={{
+      position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)",
+      display: "grid", placeItems: "center", padding: 16, zIndex: 1000,
+    }}>
+      <div style={{
+        width: "100%", maxWidth: 420, background: "var(--card)",
+        border: "1px solid var(--border)", borderRadius: 16, padding: 20,
+        boxShadow: "0 20px 40px rgba(0,0,0,0.2)", display: "grid", gap: 12,
+      }}>
+        <h2 style={{ margin: 0 }}>Log out</h2>
+        <p className="muted" style={{ margin: 0 }}>
+          Are you sure you want to log out?
+        </p>
+        <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+          <button
+            type="button"
+            className="ghostBtn"
+            onClick={onCancel}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            className="btn"
+            onClick={onConfirm}
+          >
+            Log out
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Home() {
   const router = useRouter();
   const { t } = useTranslation();
   const [posts, setPosts] = useState<PostType[]>(seedPosts);
+  const [showLogout, setShowLogout] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
 
   function addPost(content: string) {
     const newPost: PostType = {
@@ -157,6 +198,15 @@ export default function Home() {
     );
   }
 
+  useEffect(() => {
+    const token = Cookies.get("token");
+    if (!token) {
+      router.push("/");
+    } else {
+      setAuthChecked(true);
+    }
+  }, []);
+
   return (
     <div className="page">
       <header className="topbar">
@@ -166,6 +216,10 @@ export default function Home() {
         <input className="search" placeholder={t("home.search")} />
         <button className="btn btnSmall" onClick={() => alert("Search later 🙂")} type="button">
           {t("home.search_btn")}
+        </button>
+        <span style={{ flex: 1 }} />
+        <button className="btn btnSmall btnOutline" onClick={() => setShowLogout(true)} type="button">
+          Log out
         </button>
       </header>
 
@@ -267,6 +321,17 @@ export default function Home() {
       </main>
 
       <footer className="footer muted">miniSocial</footer>
+      {showLogout && (
+        <LogoutModal
+          onConfirm={() => {
+            Cookies.remove("token");
+            setShowLogout(false);
+            router.push("/");
+          }}
+          onCancel={() => setShowLogout(false)}
+        />
+      )}
     </div>
+    
   );
 }

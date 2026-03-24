@@ -133,6 +133,50 @@ body {
   color: rgba(255,255,255,0.88);
 }
 
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: var(--panel);
+  border-radius: 12px;
+  padding: 1.5rem 2rem;
+  min-width: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.modalTitle {
+  font-size: 18px;
+  font-weight: 500;
+  margin: 0;
+}
+
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.btnDanger {
+  background: #e24b4a;
+  color: white;
+  border-color: #e24b4a;
+}
+
+.btnDanger:hover {
+  background: #a32d2d;
+  border-color: #a32d2d;
+}
+
 .muted { color: var(--muted); font-size: 13px; }
 
 button:active {
