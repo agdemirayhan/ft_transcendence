@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 type PostWithRelations = {
@@ -75,6 +75,53 @@ export class PostsService {
     });
 
     return this.toResponse(post);
+  }
+
+  async toggleLike(userId: number, postId: number) {
+    const post = await this.prisma.post.findUnique({
+      where: { id: postId },
+      select: { id: true },
+    });
+    if (!post) {
+      throw new NotFoundException('Post not found');
+    }
+
+    const existingLike = await this.prisma.like.findUnique({
+      where: {
+        userId_postId: {
+          userId,
+          postId,
+        },
+      },
+    });
+
+    if (existingLike) {
+      await this.prisma.like.delete({
+        where: {
+          userId_postId: {
+            userId,
+            postId,
+          },
+        },
+      });
+    } else {
+      await this.prisma.like.create({
+        data: {
+          userId,
+          postId,
+        },
+      });
+    }
+
+    const likesCount = await this.prisma.like.count({
+      where: { postId },
+    });
+
+    return {
+      postId,
+      liked: !existingLike,
+      likesCount,
+    };
   }
 
   private toResponse(post: PostWithRelations) {

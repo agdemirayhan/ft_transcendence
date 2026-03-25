@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Request, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseIntPipe, Post, Request, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt/jwt.guard';
 import { CreatePostDto } from './create-post.dto';
 import { PostsService } from './posts.service';
@@ -23,5 +23,11 @@ export class PostsController {
   @Post()
   async create(@Request() req: JwtRequest, @Body() body: CreatePostDto) {
     return this.postsService.create(req.user.id, body.content);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/like')
+  async toggleLike(@Request() req: JwtRequest, @Param('id', ParseIntPipe) postId: number) {
+    return this.postsService.toggleLike(req.user.id, postId);
   }
 }
