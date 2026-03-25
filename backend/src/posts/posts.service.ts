@@ -16,6 +16,17 @@ type PostWithRelations = {
   };
 };
 
+type CommentWithAuthor = {
+  id: number;
+  content: string;
+  createdAt: Date;
+  author: {
+    id: number;
+    username: string;
+    avatarUrl: string | null;
+  };
+};
+
 @Injectable()
 export class PostsService {
   constructor(private readonly prisma: PrismaService) {}
@@ -124,6 +135,57 @@ export class PostsService {
     };
   }
 
+  async listComments(postId: number) {
+    await this.ensurePostExists(postId);
+
+    const comments = await this.prisma.comment.findMany({
+      where: { postId },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        author: {
+          select: {
+            id: true,
+            username: true,
+            avatarUrl: true,
+          },
+        },
+      },
+    });
+
+    return comments.map((comment) => this.toCommentResponse(comment));
+  }
+
+  async createComment(authorId: number, postId: number, content: string) {
+    await this.ensurePostExists(postId);
+
+    const trimmed = content?.trim();
+    if (!trimmed) {
+      throw new BadRequestException('Comment cannot be empty');
+    }
+    if (trimmed.length > 500) {
+      throw new BadRequestException('Comment must be 500 characters or fewer');
+    }
+
+    const comment = await this.prisma.comment.create({
+      data: {
+        authorId,
+        postId,
+        content: trimmed,
+      },
+      include: {
+        author: {
+          select: {
+            id: true,
+            username: true,
+            avatarUrl: true,
+          },
+        },
+      },
+    });
+
+    return this.toCommentResponse(comment);
+  }
+
   private toResponse(post: PostWithRelations) {
     return {
       id: post.id,
@@ -134,6 +196,26 @@ export class PostsService {
         likes: post._count.likes,
         comments: post._count.comments,
       },
+    };
+  }
+
+  private async ensurePostExists(postId: number) {
+    const post = await this.prisma.post.findUnique({
+      where: { id: postId },
+      select: { id: true },
+    });
+
+    if (!post) {
+      throw new NotFoundException('Post not found');
+    }
+  }
+
+  private toCommentResponse(comment: CommentWithAuthor) {
+    return {
+      id: comment.id,
+      content: comment.content,
+      createdAt: comment.createdAt,
+      author: comment.author,
     };
   }
 }
