@@ -8,6 +8,8 @@ import { useTranslation } from "react-i18next";
 import "../i18n";
 import Cookies from "js-cookie";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
+
 type PostType = {
   id: number;
   author: string;
@@ -18,26 +20,39 @@ type PostType = {
   liked: boolean;
 };
 
-const seedPosts: PostType[] = [
-  {
-    id: 1,
-    author: "Ayhan",
-    handle: "@ayhan",
-    time: "2s ago",
-    content: "First post! 🎉 I'm building a simple social media page.",
-    likes: 3,
+function timeAgo(dateStr: string): string {
+  const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
+  if (diff < 60) return `${diff}s ago`;
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  return `${Math.floor(diff / 86400)}d ago`;
+}
+
+function authHeaders(): HeadersInit {
+  const token = Cookies.get("token");
+  return {
+    "Content-Type": "application/json",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+}
+
+function mapPost(p: {
+  id: number;
+  content: string;
+  createdAt: string;
+  author: { username: string };
+  counts: { likes: number };
+}): PostType {
+  return {
+    id: p.id,
+    author: p.author.username,
+    handle: `@${p.author.username}`,
+    time: timeAgo(p.createdAt),
+    content: p.content,
+    likes: p.counts.likes,
     liked: false,
-  },
-  {
-    id: 2,
-    author: "Taha",
-    handle: "@tkirmizi",
-    time: "5m ago",
-    content: "Building small UIs with React is really enjoyable.",
-    likes: 7,
-    liked: true,
-  },
-];
+  };
+}
 
 function Card({ title, children }: { title?: string; children: React.ReactNode }) {
   return (
@@ -52,7 +67,7 @@ function PostComposer({ onPost }: { onPost: (content: string) => void }) {
   const [text, setText] = useState("");
   const { t } = useTranslation();
 
-  function submit(e: React.FormEvent<HTMLFormElement>) {
+  function submit(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
     const trimmed = text.trim();
     if (!trimmed) return;
@@ -131,9 +146,7 @@ function Post({
 }
 
 function LogoutModal({ onConfirm, onCancel }: { onConfirm: () => void; onCancel: () => void }) {
-  const { t } = useTranslation();
-
-   return (
+  return (
     <div style={{
       position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)",
       display: "grid", placeItems: "center", padding: 16, zIndex: 1000,
@@ -171,24 +184,44 @@ function LogoutModal({ onConfirm, onCancel }: { onConfirm: () => void; onCancel:
 export default function Home() {
   const router = useRouter();
   const { t } = useTranslation();
-  const [posts, setPosts] = useState<PostType[]>(seedPosts);
+  const [posts, setPosts] = useState<PostType[]>([]);
   const [showLogout, setShowLogout] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
 
-  function addPost(content: string) {
-    const newPost: PostType = {
-      id: Date.now(),
-      author: "You",
-      handle: "@you",
-      time: t("home.just_now"),
-      content,
-      likes: 0,
-      liked: false,
-    };
-    setPosts((p) => [newPost, ...p]);
+  useEffect(() => {
+    const token = Cookies.get("token");
+    if (!token) {
+      router.push("/");
+      return;
+    }
+    setAuthChecked(true);
+
+    fetch(`${API_URL}/posts`, { headers: authHeaders() })
+      .then((r) => r.json())
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setPosts(data.map(mapPost));
+        }
+      })
+      .catch(console.error);
+  }, []);
+
+  async function addPost(content: string) {
+    try {
+      const res = await fetch(`${API_URL}/posts`, {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify({ content }),
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      setPosts((p) => [mapPost(data), ...p]);
+    } catch (e) {
+      console.error(e);
+    }
   }
 
-  function toggleLike(id: number) {
+  async function toggleLike(id: number) {
     setPosts((p) =>
       p.map((post) => {
         if (post.id !== id) return post;
@@ -196,16 +229,34 @@ export default function Home() {
         return { ...post, liked, likes: liked ? post.likes + 1 : Math.max(0, post.likes - 1) };
       })
     );
+
+    try {
+      const res = await fetch(`${API_URL}/posts/${id}/like`, {
+        method: "POST",
+        headers: authHeaders(),
+      });
+      if (!res.ok) {
+        setPosts((p) =>
+          p.map((post) => {
+            if (post.id !== id) return post;
+            const liked = !post.liked;
+            return { ...post, liked, likes: liked ? post.likes + 1 : Math.max(0, post.likes - 1) };
+          })
+        );
+        return;
+      }
+      const data = await res.json();
+      setPosts((p) =>
+        p.map((post) =>
+          post.id === id ? { ...post, liked: data.liked, likes: data.likesCount } : post
+        )
+      );
+    } catch (e) {
+      console.error(e);
+    }
   }
 
-  useEffect(() => {
-    const token = Cookies.get("token");
-    if (!token) {
-      router.push("/");
-    } else {
-      setAuthChecked(true);
-    }
-  }, []);
+  if (!authChecked) return null;
 
   return (
     <div className="page">
@@ -332,6 +383,5 @@ export default function Home() {
         />
       )}
     </div>
-    
   );
 }
