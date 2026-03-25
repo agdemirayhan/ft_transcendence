@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Param, ParseIntPipe, Post, Request, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt/jwt.guard';
+import { CreateCommentDto } from './create-comment.dto';
 import { CreatePostDto } from './create-post.dto';
 import { PostsService } from './posts.service';
 
@@ -29,5 +30,20 @@ export class PostsController {
   @Post(':id/like')
   async toggleLike(@Request() req: JwtRequest, @Param('id', ParseIntPipe) postId: number) {
     return this.postsService.toggleLike(req.user.id, postId);
+  }
+
+  @Get(':id/comments')
+  async listComments(@Param('id', ParseIntPipe) postId: number) {
+    return this.postsService.listComments(postId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/comments')
+  async createComment(
+    @Request() req: JwtRequest,
+    @Param('id', ParseIntPipe) postId: number,
+    @Body() body: CreateCommentDto,
+  ) {
+    return this.postsService.createComment(req.user.id, postId, body.content);
   }
 }
