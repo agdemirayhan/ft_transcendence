@@ -5,6 +5,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TwoFactorModule } from './2fa/twofactor.module';
+import { PostsModule } from './posts/posts.module';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { TwoFactorModule } from './2fa/twofactor.module';
     PrismaModule,
     AuthModule,
     TwoFactorModule,
+    PostsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
