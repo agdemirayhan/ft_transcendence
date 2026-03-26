@@ -3,6 +3,7 @@
 import Avatar from "@/components/Avatar";
 import React, { useState, useEffect } from "react";
 import { HeartIcon as HeartSolid } from "@heroicons/react/24/solid";
+import { PaperClipIcon } from "@heroicons/react/24/outline";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import "../i18n";
@@ -50,6 +51,7 @@ function Card({ title, children }: { title?: string; children: React.ReactNode }
 
 function PostComposer({ onPost }: { onPost: (content: string) => void }) {
   const [text, setText] = useState("");
+  const [attachmentName, setAttachmentName] = useState("");
   const { t } = useTranslation();
 
   function submit(e: React.FormEvent<HTMLFormElement>) {
@@ -75,7 +77,27 @@ function PostComposer({ onPost }: { onPost: (content: string) => void }) {
           />
         </div>
         <div className="composerBottom">
-          <span className="muted">{text.length}/240</span>
+          <div className="composerMetaLeft">
+            <input
+              id="post-attachment"
+              type="file"
+              hidden
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setAttachmentName(e.target.files?.[0]?.name ?? "")
+              }
+            />
+            <button
+              className="attachBtn"
+              type="button"
+              aria-label="Attach file"
+              title="Attach file"
+              onClick={() => document.getElementById("post-attachment")?.click()}
+            >
+              <PaperClipIcon className="attachIcon" />
+            </button>
+            <span className="muted">{text.length}/240</span>
+            {attachmentName ? <span className="muted">• {attachmentName}</span> : null}
+          </div>
           <button className="btn" type="submit">
             {t("home.search_btn") === "Search" ? "Post" : t("home.search_btn")}
           </button>
