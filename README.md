@@ -26,7 +26,14 @@ Health check:
 curl http://localhost:3000/health
 ```
 
-## 3) Local backend (optional)
+## 3) Build initial data
+
+```bash
+docker compose exec backend npx prisma db seed
+```
+
+
+## Local backend (optional)
 
 If you want to run backend without Docker:
 
