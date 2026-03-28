@@ -6,6 +6,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TwoFactorModule } from './2fa/twofactor.module';
 import { PostsModule } from './posts/posts.module';
+import { ChatModule } from './chat/chat.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { PostsModule } from './posts/posts.module';
     AuthModule,
     TwoFactorModule,
     PostsModule,
+    ChatModule,
   ],
   controllers: [AppController],
   providers: [AppService],
