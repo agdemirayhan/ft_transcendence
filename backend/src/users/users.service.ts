@@ -5,6 +5,20 @@ import { PrismaService } from '../prisma/prisma.service';
 export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
 
+  async getPosts(userId: number) {
+    return this.prisma.post.findMany({
+      where: { authorId: userId },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        content: true,
+        createdAt: true,
+        author: { select: { username: true } },
+        _count: { select: { likes: true } },
+      },
+    });
+  }
+
   async getProfile(userId: number) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },

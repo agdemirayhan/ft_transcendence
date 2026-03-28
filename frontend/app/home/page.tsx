@@ -63,7 +63,7 @@ function Card({ title, children }: { title?: string; children: React.ReactNode }
   );
 }
 
-function PostComposer({ onPost }: { onPost: (content: string) => void }) {
+function PostComposer({ onPost, username }: { onPost: (content: string) => void; username: string }) {
   const [text, setText] = useState("");
   const { t } = useTranslation();
 
@@ -79,7 +79,7 @@ function PostComposer({ onPost }: { onPost: (content: string) => void }) {
     <Card>
       <form onSubmit={submit} className="composer">
         <div className="composerTop">
-          <Avatar name="You" />
+          <Avatar name={username} />
           <textarea
             value={text}
             onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setText(e.target.value)}
@@ -228,6 +228,7 @@ export default function Home() {
       if (!res.ok) return;
       const data = await res.json();
       setPosts((p) => [mapPost(data), ...p]);
+      setCurrentUser((u) => u ? { ...u, stats: { ...u.stats, posts: u.stats.posts + 1 } } : u);
     } catch (e) {
       console.error(e);
     }
@@ -300,15 +301,15 @@ export default function Home() {
             </div>
             <div className="stats">
               <div className="stat">
-                <div className="statNum">{currentUser?.stats.posts ?? "-"}</div>
+                <div className="statNum">{currentUser?.stats?.posts ?? "-"}</div>
                 <div className="muted">{t("home.posts")}</div>
               </div>
               <div className="stat">
-                <div className="statNum">{currentUser?.stats.followers ?? "-"}</div>
+                <div className="statNum">{currentUser?.stats?.followers ?? "-"}</div>
                 <div className="muted">{t("home.followers")}</div>
               </div>
               <div className="stat">
-                <div className="statNum">{currentUser?.stats.following ?? "-"}</div>
+                <div className="statNum">{currentUser?.stats?.following ?? "-"}</div>
                 <div className="muted">{t("home.following")}</div>
               </div>
             </div>
@@ -332,7 +333,7 @@ export default function Home() {
         </aside>
 
         <section className="center">
-          <PostComposer onPost={addPost} />
+          <PostComposer onPost={addPost} username={currentUser?.username ?? "You"} />
           <div className="feed">
             {posts.map((p) => (
               <Card key={p.id}>
