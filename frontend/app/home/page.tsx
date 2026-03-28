@@ -181,12 +181,19 @@ function LogoutModal({ onConfirm, onCancel }: { onConfirm: () => void; onCancel:
   );
 }
 
+type UserProfile = {
+  id: number;
+  username: string;
+  stats: { posts: number; followers: number; following: number };
+};
+
 export default function Home() {
   const router = useRouter();
   const { t } = useTranslation();
   const [posts, setPosts] = useState<PostType[]>([]);
   const [showLogout, setShowLogout] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
 
   useEffect(() => {
     const token = Cookies.get("token");
@@ -195,6 +202,11 @@ export default function Home() {
       return;
     }
     setAuthChecked(true);
+
+    fetch(`${API_URL}/auth/me`, { headers: authHeaders() })
+      .then((r) => r.json())
+      .then((data) => setCurrentUser(data))
+      .catch(console.error);
 
     fetch(`${API_URL}/posts`, { headers: authHeaders() })
       .then((r) => r.json())
@@ -280,23 +292,23 @@ export default function Home() {
         <aside className="left">
           <Card title={t("home.profile")}>
             <div className="profile">
-              <Avatar name="Ayhan" />
+              <Avatar name={currentUser?.username ?? "?"} />
               <div>
-                <div className="profileName">Ayhan</div>
-                <div className="muted">@ayhan</div>
+                <div className="profileName">{currentUser?.username ?? "..."}</div>
+                <div className="muted">@{currentUser?.username ?? "..."}</div>
               </div>
             </div>
             <div className="stats">
               <div className="stat">
-                <div className="statNum">12</div>
+                <div className="statNum">{currentUser?.stats.posts ?? "-"}</div>
                 <div className="muted">{t("home.posts")}</div>
               </div>
               <div className="stat">
-                <div className="statNum">340</div>
+                <div className="statNum">{currentUser?.stats.followers ?? "-"}</div>
                 <div className="muted">{t("home.followers")}</div>
               </div>
               <div className="stat">
-                <div className="statNum">180</div>
+                <div className="statNum">{currentUser?.stats.following ?? "-"}</div>
                 <div className="muted">{t("home.following")}</div>
               </div>
             </div>

@@ -70,6 +70,9 @@ export class AuthService {
         username: true,
         twoFactorEnabled: true,
         language: true,
+        _count: {
+          select: { posts: true, followers: true, following: true },
+        },
       },
     });
 
@@ -77,7 +80,8 @@ export class AuthService {
       throw new UnauthorizedException('User not found');
     }
 
-    return user;
+    const { _count, ...rest } = user;
+    return { ...rest, stats: { posts: _count.posts, followers: _count.followers, following: _count.following } };
   }
 
   async deleteAccount(userId: number) {
