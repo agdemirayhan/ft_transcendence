@@ -12,6 +12,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
 
 type PostType = {
   id: number;
+  authorId: number;
   author: string;
   handle: string;
   time: string;
@@ -40,11 +41,12 @@ function mapPost(p: {
   id: number;
   content: string;
   createdAt: string;
-  author: { username: string };
+  author: { id: number; username: string };
   counts: { likes: number };
 }): PostType {
   return {
     id: p.id,
+    authorId: p.author.id,
     author: p.author.username,
     handle: `@${p.author.username}`,
     time: timeAgo(p.createdAt),
@@ -63,7 +65,7 @@ function Card({ title, children }: { title?: string; children: React.ReactNode }
   );
 }
 
-function PostComposer({ onPost }: { onPost: (content: string) => void }) {
+function PostComposer({ onPost, username }: { onPost: (content: string) => void; username: string }) {
   const [text, setText] = useState("");
   const { t } = useTranslation();
 
@@ -79,7 +81,7 @@ function PostComposer({ onPost }: { onPost: (content: string) => void }) {
     <Card>
       <form onSubmit={submit} className="composer">
         <div className="composerTop">
-          <Avatar name="You" />
+          <Avatar name={username} />
           <textarea
             value={text}
             onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setText(e.target.value)}
@@ -108,6 +110,7 @@ function Post({
   onToggleLike: (id: number) => void;
 }) {
   const { t } = useTranslation();
+  const router = useRouter();
 
   return (
     <div className="post">
@@ -115,7 +118,7 @@ function Post({
       <div className="postBody">
         <div className="postHeader">
           <div className="postAuthor">
-            <span className="name">{post.author}</span>
+            <span className="name" style={{ cursor: "pointer" }} onClick={() => router.push(`/profile/${post.authorId}`)}>{post.author}</span>
             <span className="handle">{post.handle}</span>
             <span className="dot">•</span>
             <span className="time">{post.time}</span>
@@ -181,12 +184,19 @@ function LogoutModal({ onConfirm, onCancel }: { onConfirm: () => void; onCancel:
   );
 }
 
+type UserProfile = {
+  id: number;
+  username: string;
+  stats: { posts: number; followers: number; following: number };
+};
+
 export default function Home() {
   const router = useRouter();
   const { t } = useTranslation();
   const [posts, setPosts] = useState<PostType[]>([]);
   const [showLogout, setShowLogout] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
 
   useEffect(() => {
     const token = Cookies.get("token");
@@ -195,6 +205,11 @@ export default function Home() {
       return;
     }
     setAuthChecked(true);
+
+    fetch(`${API_URL}/auth/me`, { headers: authHeaders() })
+      .then((r) => r.json())
+      .then((data) => setCurrentUser(data))
+      .catch(console.error);
 
     fetch(`${API_URL}/posts`, { headers: authHeaders() })
       .then((r) => r.json())
@@ -216,6 +231,7 @@ export default function Home() {
       if (!res.ok) return;
       const data = await res.json();
       setPosts((p) => [mapPost(data), ...p]);
+      setCurrentUser((u) => u ? { ...u, stats: { ...u.stats, posts: u.stats.posts + 1 } } : u);
     } catch (e) {
       console.error(e);
     }
@@ -280,23 +296,23 @@ export default function Home() {
         <aside className="left">
           <Card title={t("home.profile")}>
             <div className="profile">
-              <Avatar name="Ayhan" />
+              <Avatar name={currentUser?.username ?? "?"} />
               <div>
-                <div className="profileName">Ayhan</div>
-                <div className="muted">@ayhan</div>
+                <div className="profileName">{currentUser?.username ?? "..."}</div>
+                <div className="muted">@{currentUser?.username ?? "..."}</div>
               </div>
             </div>
             <div className="stats">
               <div className="stat">
-                <div className="statNum">12</div>
+                <div className="statNum">{currentUser?.stats?.posts ?? "-"}</div>
                 <div className="muted">{t("home.posts")}</div>
               </div>
               <div className="stat">
-                <div className="statNum">340</div>
+                <div className="statNum">{currentUser?.stats?.followers ?? "-"}</div>
                 <div className="muted">{t("home.followers")}</div>
               </div>
               <div className="stat">
-                <div className="statNum">180</div>
+                <div className="statNum">{currentUser?.stats?.following ?? "-"}</div>
                 <div className="muted">{t("home.following")}</div>
               </div>
             </div>
@@ -320,7 +336,7 @@ export default function Home() {
         </aside>
 
         <section className="center">
-          <PostComposer onPost={addPost} />
+          <PostComposer onPost={addPost} username={currentUser?.username ?? "You"} />
           <div className="feed">
             {posts.map((p) => (
               <Card key={p.id}>
