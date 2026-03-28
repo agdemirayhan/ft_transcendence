@@ -12,6 +12,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
 
 type PostType = {
   id: number;
+  authorId: number;
   author: string;
   handle: string;
   time: string;
@@ -40,11 +41,12 @@ function mapPost(p: {
   id: number;
   content: string;
   createdAt: string;
-  author: { username: string };
+  author: { id: number; username: string };
   counts: { likes: number };
 }): PostType {
   return {
     id: p.id,
+    authorId: p.author.id,
     author: p.author.username,
     handle: `@${p.author.username}`,
     time: timeAgo(p.createdAt),
@@ -108,6 +110,7 @@ function Post({
   onToggleLike: (id: number) => void;
 }) {
   const { t } = useTranslation();
+  const router = useRouter();
 
   return (
     <div className="post">
@@ -115,7 +118,7 @@ function Post({
       <div className="postBody">
         <div className="postHeader">
           <div className="postAuthor">
-            <span className="name">{post.author}</span>
+            <span className="name" style={{ cursor: "pointer" }} onClick={() => router.push(`/profile/${post.authorId}`)}>{post.author}</span>
             <span className="handle">{post.handle}</span>
             <span className="dot">•</span>
             <span className="time">{post.time}</span>
