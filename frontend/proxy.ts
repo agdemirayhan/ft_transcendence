@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 const protectedRoutes = ["/home", "/settings", "/messages", "/profile"];
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {  // middleware → proxy
   const token = request.cookies.get("token")?.value;
   const isProtected = protectedRoutes.some((route) =>
     request.nextUrl.pathname.startsWith(route)

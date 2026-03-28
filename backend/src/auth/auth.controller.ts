@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards, Request, Get, Delete } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Request, Get, Delete, Patch } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LocalAuthGuard } from './local-auth.guard';
 import { JwtAuthGuard } from './jwt/jwt.guard';
@@ -28,5 +28,11 @@ export class AuthController {
   @Delete('delete-account')
   async deleteAccount(@Request() req: any) {
     return this.authService.deleteAccount(req.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('language')
+  async updateLanguage(@Request() req: any, @Body() body: { language: string }) {
+    return this.authService.updateLanguage(req.user.id, body.language);
   }
 }

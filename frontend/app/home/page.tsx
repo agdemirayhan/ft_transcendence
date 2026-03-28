@@ -1,9 +1,14 @@
 "use client";
 
 import Avatar from "@/components/Avatar";
-import React, { useMemo, useState } from "react";
+import React, { useState, useEffect } from "react";
 import { HeartIcon as HeartSolid } from "@heroicons/react/24/solid";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
+import "../i18n";
+import Cookies from "js-cookie";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
 
 type PostType = {
   id: number;
@@ -15,35 +20,39 @@ type PostType = {
   liked: boolean;
 };
 
-const seedPosts: PostType[] = [
-  {
-    id: 1,
-    author: "Ayhan",
-    handle: "@ayhan",
-    time: "2s ago",
-    content: "First post! 🎉 I'm building a simple social media page.",
-    likes: 3,
+function timeAgo(dateStr: string): string {
+  const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
+  if (diff < 60) return `${diff}s ago`;
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  return `${Math.floor(diff / 86400)}d ago`;
+}
+
+function authHeaders(): HeadersInit {
+  const token = Cookies.get("token");
+  return {
+    "Content-Type": "application/json",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+}
+
+function mapPost(p: {
+  id: number;
+  content: string;
+  createdAt: string;
+  author: { username: string };
+  counts: { likes: number };
+}): PostType {
+  return {
+    id: p.id,
+    author: p.author.username,
+    handle: `@${p.author.username}`,
+    time: timeAgo(p.createdAt),
+    content: p.content,
+    likes: p.counts.likes,
     liked: false,
-  },
-  {
-    id: 2,
-    author: "Taha",
-    handle: "@tkirmizi",
-    time: "5m ago",
-    content: "Building small UIs with React is really enjoyable.",
-    likes: 7,
-    liked: true,
-  },
-];
-
-// function Avatar({ name }: { name: string }) {
-//   const initials = useMemo(() => {
-//     const parts = name.trim().split(/\s+/);
-//     return (parts[0]?.[0] ?? "U") + (parts[1]?.[0] ?? "");
-//   }, [name]);
-
-//   return <div className="avatar">{initials.toUpperCase()}</div>;
-// }
+  };
+}
 
 function Card({ title, children }: { title?: string; children: React.ReactNode }) {
   return (
@@ -56,8 +65,9 @@ function Card({ title, children }: { title?: string; children: React.ReactNode }
 
 function PostComposer({ onPost }: { onPost: (content: string) => void }) {
   const [text, setText] = useState("");
+  const { t } = useTranslation();
 
-  function submit(e: React.FormEvent<HTMLFormElement>) {
+  function submit(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
     const trimmed = text.trim();
     if (!trimmed) return;
@@ -74,16 +84,15 @@ function PostComposer({ onPost }: { onPost: (content: string) => void }) {
             value={text}
             onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setText(e.target.value)}
             className="textarea"
-            placeholder="What's happening?"
+            placeholder={t("home.whats_happening")}
             rows={3}
             maxLength={240}
           />
         </div>
-
         <div className="composerBottom">
           <span className="muted">{text.length}/240</span>
           <button className="btn" type="submit">
-            Post
+            {t("home.search_btn") === "Search" ? "Post" : t("home.search_btn")}
           </button>
         </div>
       </form>
@@ -98,6 +107,8 @@ function Post({
   post: PostType;
   onToggleLike: (id: number) => void;
 }) {
+  const { t } = useTranslation();
+
   return (
     <div className="post">
       <Avatar name={post.author} />
@@ -110,9 +121,7 @@ function Post({
             <span className="time">{post.time}</span>
           </div>
         </div>
-
         <div className="postContent">{post.content}</div>
-
         <div className="postActions">
           <button
             className={`iconBtn ${post.liked ? "liked" : ""}`}
@@ -123,22 +132,48 @@ function Post({
             <HeartSolid className={`icon ${post.liked ? "liked" : ""}`} />
           </button>
           <span className="muted">{post.likes}</span>
-
           <span className="spacer" />
+          <button className="ghostBtn" onClick={() => alert("We'll add this later 🙂")} type="button">
+            {t("home.comment")}
+          </button>
+          <button className="ghostBtn" onClick={() => alert("We'll add this later 🙂")} type="button">
+            {t("home.share")}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
+function LogoutModal({ onConfirm, onCancel }: { onConfirm: () => void; onCancel: () => void }) {
+  return (
+    <div style={{
+      position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)",
+      display: "grid", placeItems: "center", padding: 16, zIndex: 1000,
+    }}>
+      <div style={{
+        width: "100%", maxWidth: 420, background: "var(--card)",
+        border: "1px solid var(--border)", borderRadius: 16, padding: 20,
+        boxShadow: "0 20px 40px rgba(0,0,0,0.2)", display: "grid", gap: 12,
+      }}>
+        <h2 style={{ margin: 0 }}>Log out</h2>
+        <p className="muted" style={{ margin: 0 }}>
+          Are you sure you want to log out?
+        </p>
+        <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
           <button
-            className="ghostBtn"
-            onClick={() => alert("We'll add this later 🙂")}
             type="button"
+            className="ghostBtn"
+            onClick={onCancel}
           >
-            Comment
+            Cancel
           </button>
           <button
-            className="ghostBtn"
-            onClick={() => alert("We'll add this later 🙂")}
             type="button"
+            className="btn"
+            onClick={onConfirm}
           >
-            Share
+            Log out
           </button>
         </div>
       </div>
@@ -148,42 +183,94 @@ function Post({
 
 export default function Home() {
   const router = useRouter();
-  const [posts, setPosts] = useState<PostType[]>(seedPosts);
+  const { t } = useTranslation();
+  const [posts, setPosts] = useState<PostType[]>([]);
+  const [showLogout, setShowLogout] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
 
-  function addPost(content: string) {
-    const newPost: PostType = {
-      id: Date.now(),
-      author: "You",
-      handle: "@you",
-      time: "just now",
-      content,
-      likes: 0,
-      liked: false,
-    };
-    setPosts((p) => [newPost, ...p]);
+  useEffect(() => {
+    const token = Cookies.get("token");
+    if (!token) {
+      router.push("/");
+      return;
+    }
+    setAuthChecked(true);
+
+    fetch(`${API_URL}/posts`, { headers: authHeaders() })
+      .then((r) => r.json())
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setPosts(data.map(mapPost));
+        }
+      })
+      .catch(console.error);
+  }, []);
+
+  async function addPost(content: string) {
+    try {
+      const res = await fetch(`${API_URL}/posts`, {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify({ content }),
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      setPosts((p) => [mapPost(data), ...p]);
+    } catch (e) {
+      console.error(e);
+    }
   }
 
-  function toggleLike(id: number) {
+  async function toggleLike(id: number) {
     setPosts((p) =>
       p.map((post) => {
         if (post.id !== id) return post;
         const liked = !post.liked;
-        return {
-          ...post,
-          liked,
-          likes: liked ? post.likes + 1 : Math.max(0, post.likes - 1),
-        };
+        return { ...post, liked, likes: liked ? post.likes + 1 : Math.max(0, post.likes - 1) };
       })
     );
+
+    try {
+      const res = await fetch(`${API_URL}/posts/${id}/like`, {
+        method: "POST",
+        headers: authHeaders(),
+      });
+      if (!res.ok) {
+        setPosts((p) =>
+          p.map((post) => {
+            if (post.id !== id) return post;
+            const liked = !post.liked;
+            return { ...post, liked, likes: liked ? post.likes + 1 : Math.max(0, post.likes - 1) };
+          })
+        );
+        return;
+      }
+      const data = await res.json();
+      setPosts((p) =>
+        p.map((post) =>
+          post.id === id ? { ...post, liked: data.liked, likes: data.likesCount } : post
+        )
+      );
+    } catch (e) {
+      console.error(e);
+    }
   }
+
+  if (!authChecked) return null;
 
   return (
     <div className="page">
       <header className="topbar">
-        <div className="brand"><img src="/favicon-32x32.png" alt="miniSocial" width={32} height={32} /></div>
-        <input className="search" placeholder="Search..." />
+        <div className="brand">
+          <img src="/favicon-32x32.png" alt="miniSocial" width={32} height={32} />
+        </div>
+        <input className="search" placeholder={t("home.search")} />
         <button className="btn btnSmall" onClick={() => alert("Search later 🙂")} type="button">
-          Search
+          {t("home.search_btn")}
+        </button>
+        <span style={{ flex: 1 }} />
+        <button className="btn btnSmall btnOutline" onClick={() => setShowLogout(true)} type="button">
+          Log out
         </button>
       </header>
 
@@ -191,7 +278,7 @@ export default function Home() {
         <aside className="volume" />
 
         <aside className="left">
-          <Card title="Profile">
+          <Card title={t("home.profile")}>
             <div className="profile">
               <Avatar name="Ayhan" />
               <div>
@@ -199,40 +286,34 @@ export default function Home() {
                 <div className="muted">@ayhan</div>
               </div>
             </div>
-
             <div className="stats">
               <div className="stat">
                 <div className="statNum">12</div>
-                <div className="muted">Posts</div>
+                <div className="muted">{t("home.posts")}</div>
               </div>
               <div className="stat">
                 <div className="statNum">340</div>
-                <div className="muted">Followers</div>
+                <div className="muted">{t("home.followers")}</div>
               </div>
               <div className="stat">
                 <div className="statNum">180</div>
-                <div className="muted">Following</div>
+                <div className="muted">{t("home.following")}</div>
               </div>
             </div>
-
             <button className="btn btnWide" onClick={() => router.push("/profile")} type="button">
-              Edit Profile
+              {t("home.edit_profile")}
             </button>
           </Card>
 
-          <Card title="Shortcuts">
+          <Card title={t("home.shortcuts")}>
             <div className="list">
-              <button className="linkBtn" type="button">
-                Feed
-              </button>
-              <button className="linkBtn" type="button">
-                Explore
-              </button>
+              <button className="linkBtn" type="button">{t("home.feed")}</button>
+              <button className="linkBtn" type="button">{t("home.explore")}</button>
               <button className="linkBtn" onClick={() => router.push("/messages")} type="button">
-                Messages
+                {t("home.messages")}
               </button>
               <button className="linkBtn" onClick={() => router.push("/settings")} type="button">
-                Settings
+                {t("home.settings")}
               </button>
             </div>
           </Card>
@@ -250,7 +331,7 @@ export default function Home() {
         </section>
 
         <aside className="right">
-          <Card title="Trending">
+          <Card title={t("home.trending")}>
             <div className="chips">
               <span className="chip">#react</span>
               <span className="chip">#frontend</span>
@@ -259,7 +340,7 @@ export default function Home() {
             </div>
           </Card>
 
-          <Card title="Suggestions">
+          <Card title={t("home.suggestions")}>
             <div className="suggestions">
               {[
                 { name: "Manuel", handle: "@mhummel" },
@@ -279,7 +360,7 @@ export default function Home() {
                     onClick={() => alert(`${u.name} followed (fake) 🙂`)}
                     type="button"
                   >
-                    Follow
+                    {t("home.follow")}
                   </button>
                 </div>
               ))}
@@ -290,7 +371,18 @@ export default function Home() {
         <aside className="volume" />
       </main>
 
-      <footer className="footer muted">miniSocial </footer>
+      <footer className="footer muted">miniSocial</footer>
+      {showLogout && (
+        <LogoutModal
+          onConfirm={() => {
+            Cookies.remove("token");
+            setShowLogout(false);
+            router.push("/");
+          }}
+          onCancel={() => setShowLogout(false)}
+        />
+      )}
     </div>
+    
   );
 }

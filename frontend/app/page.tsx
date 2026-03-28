@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
+import Image from "next/image";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
 
@@ -14,6 +15,18 @@ export default function AuthPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [shake, setShake] = useState(false);
+
+  function triggerShake() {
+    setShake(true);
+    setTimeout(() => setShake(false), 500);
+  }
+
+  function isValidPassword(password: string): boolean {
+    return password.length >= 8 &&
+      /[A-Z]/.test(password) &&
+      /[0-9]/.test(password);
+  }
 
   function isValidEmail(email: string): boolean {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -26,6 +39,14 @@ export default function AuthPage() {
 
     if (!isValidEmail(email)) {
       setError("Please enter a valid email address.");
+      triggerShake();
+      setLoading(false);
+      return;
+    }
+
+    if (mode === "signup" && !isValidPassword(password)) {
+      setError("Password must be at least 8 characters, include a number and an uppercase letter.");
+      triggerShake();
       setLoading(false);
       return;
     }
@@ -49,6 +70,7 @@ export default function AuthPage() {
 
       if (!res.ok) {
         setError(data.message || "Something went wrong.");
+        triggerShake();
         return;
       }
 
@@ -73,7 +95,22 @@ export default function AuthPage() {
 
   return (
     <div className="authPage">
-      <div className="authCard">
+      {/* ── Brand ── */}
+      <div className="authBrand">
+        <Image
+          src="/android-chrome-192x192.png"
+          alt="miniSocial logo"
+          width={144}
+          height={144}
+          className="authLogo"
+          priority
+        />
+        <h1 className="authLogoText">miniSocial</h1>
+        <p className="authTagline">where people get social</p>
+      </div>
+
+      {/* ── Card ── */}
+      <div className={`authCard ${shake ? "shake" : ""}`}>
         <div className="authTabs">
           <button
             className={`authTab ${mode === "login" ? "active" : ""}`}
@@ -93,7 +130,7 @@ export default function AuthPage() {
 
         <div className="authFields">
           <input
-            className="authInput"
+            className={`authInput ${error && !isValidEmail(email) ? "inputError" : ""}`}
             type="email"
             placeholder="Email"
             value={email}
@@ -111,7 +148,7 @@ export default function AuthPage() {
           )}
 
           <input
-            className="authInput"
+            className={`authInput ${error && isValidEmail(email) && mode === "signup" && !isValidPassword(password) ? "inputError" : ""}`}
             type="password"
             placeholder="Password"
             value={password}
