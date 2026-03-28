@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
   --bg: #0b1220;
   --panel: rgba(255, 255, 255, 0.06);
@@ -17,8 +21,8 @@
 
 
 /* .noselect {
-  -webkit-user-select: none; 
-  user-select: none; 
+  -webkit-user-select: none;
+  user-select: none;
 } */
 
 
@@ -35,9 +39,9 @@ body {
               var(--bg);
   color: var(--text);
 
-  
+
   display: flex;
-  justify-content: center;   
+  justify-content: center;
 }
 
 .page {
@@ -80,8 +84,8 @@ body {
   padding: 10px 12px;
   outline: none;
 }
-.search::placeholder { 
-  color: var(--muted); 
+.search::placeholder {
+  color: var(--muted);
 }
 
 
@@ -100,7 +104,7 @@ body {
 
 .left, .right {
   position: sticky;
-  top: 76px; 
+  top: 76px;
 }
 
 @media (max-width: 1200px) {
@@ -348,7 +352,7 @@ button:active {
   text-align: center;
   border-top: 1px solid var(--border);
   background: rgba(255,255,255,0.02);
-} 
+}
 
 
 /* LOGIN/SIGNUP PAGE */

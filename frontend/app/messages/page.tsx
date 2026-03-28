@@ -1,171 +1,199 @@
-"use client";
+'use client';
 
-import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
-import Cookies from "js-cookie";
-import io, { Socket } from "socket.io-client";
+import { useState, useEffect, useRef } from 'react';
+import { io, Socket } from 'socket.io-client';
+import Cookies from 'js-cookie';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
+interface ChatUser {
+  id: number;
+  username: string;
+}
 
 export default function MessagesPage() {
-  const router = useRouter();
-  const [users, setUsers] = useState<any[]>([]);
+  const [chatUsers, setChatUsers] = useState<ChatUser[]>([]);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
   const [messages, setMessages] = useState<any[]>([]);
-  const [newMessage, setNewMessage] = useState("");
-  const [selectedUser, setSelectedUser] = useState<any>(null);
-  const [socket, setSocket] = useState<Socket | null>(null);
+  const [newMessage, setNewMessage] = useState('');
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+  const socketRef = useRef<Socket | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const token = Cookies.get("token");
+  const API_URL = 'http://localhost:3000';
 
-  // Socket.io
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  // Eigene User-ID holen
   useEffect(() => {
-    if (!token) {
-      router.push("/");
-      return;
-    }
-
-    const newSocket = io(API_URL, {
-      auth: { token },
-      transports: ["websocket"],
-    });
-
-    newSocket.on("connect", () => console.log("🟢 Socket connected"));
-
-    newSocket.on("newMessage", (msg: any) => {
-      if (selectedUser && (msg.receiverId === selectedUser.id || msg.senderId === selectedUser.id)) {
-        setMessages((prev) => [...prev, msg]);
-      }
-    });
-
-    setSocket(newSocket);
-
-    return () => {
-      newSocket.disconnect();
-    };
-  }, [token, selectedUser]);
-
-  // Auto-scroll
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
-  // Alle User laden (außer sich selbst)
-  useEffect(() => {
+    const token = Cookies.get('token');
     if (!token) return;
+
+    fetch(`${API_URL}/auth/me`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(res => res.json())
+      .then(data => setCurrentUserId(data.id));
+  }, []);
+
+  // Alle anderen User für die Sidebar holen
+  useEffect(() => {
+    const token = Cookies.get('token');
+    if (!token) return;
+
     fetch(`${API_URL}/auth/users`, {
       headers: { Authorization: `Bearer ${token}` },
     })
-      .then((res) => res.json())
-      .then((data) => {
-        const currentUserId = JSON.parse(atob(token.split(".")[1])).sub;
-        setUsers(data.filter((u: any) => u.id !== currentUserId));
-      })
-      .catch(console.error);
-  }, [token]);
+      .then(res => res.json())
+      .then(data => setChatUsers(data.filter((u: any) => u.id !== currentUserId)));
+  }, [currentUserId]);
 
-  // Chat-Historie laden
+  // WebSocket für den aktuellen Chat
   useEffect(() => {
-    if (!selectedUser || !token) return;
-    fetch(`${API_URL}/auth/messages/${selectedUser.id}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => res.json())
-      .then((data) => setMessages(data))
-      .catch(console.error);
-  }, [selectedUser, token]);
+    if (!currentUserId || !selectedId) return () => {};
 
-  const sendMessage = () => {
-    if (!socket || !newMessage.trim() || !selectedUser) return;
+    const token = Cookies.get('token');
+    const newSocket = io(API_URL, { auth: { token } });
+    socketRef.current = newSocket;
 
-    socket.emit("sendMessage", {
-      receiverId: selectedUser.id,
-      content: newMessage,
+    newSocket.on('connect', () => console.log('✅ Socket verbunden'));
+
+    newSocket.on('newMessage', (msg: any) => {
+      if (msg.senderId === selectedId || msg.receiverId === selectedId) {
+        setMessages((prev) => {
+          if (prev.some((m) => m.id === msg.id)) return prev;
+          return [...prev, msg];
+        });
+        scrollToBottom();
+      }
     });
 
-    setNewMessage("");
+    newSocket.on('messageSent', (msg: any) => {
+      setMessages((prev) => {
+        const filtered = prev.filter((m) => m.id !== msg.id);
+        return [...filtered, msg];
+      });
+      scrollToBottom();
+    });
+
+    return () => newSocket.disconnect();
+  }, [currentUserId, selectedId]);
+
+  const sendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newMessage.trim() || !socketRef.current || !currentUserId || !selectedId) return;
+
+    const messageData = { receiverId: selectedId, content: newMessage };
+
+    const optimisticMsg = {
+      id: Date.now(),
+      content: newMessage,
+      senderId: currentUserId,
+      receiverId: selectedId,
+      createdAt: new Date().toISOString(),
+    };
+
+    setMessages((prev) => [...prev, optimisticMsg]);
+    scrollToBottom();
+
+    socketRef.current.emit('sendMessage', messageData);
+    setNewMessage('');
   };
 
-  if (!token) return <div className="p-8 text-center">Bitte zuerst einloggen</div>;
+  const selectChat = (id: number) => {
+    setSelectedId(id);
+    setMessages([]);
+  };
+
+  if (!currentUserId) return <div className="flex items-center justify-center h-screen text-white">Lade Chats...</div>;
 
   return (
-    <div className="flex h-screen bg-[#0a0a0a] text-white">
-      {/* Sidebar */}
-      <div className="w-80 border-r border-gray-800 bg-[#111] p-6 overflow-y-auto">
-        <h1 className="text-3xl font-bold mb-8">Messages</h1>
-        {users.map((user) => (
-          <div
-            key={user.id}
-            onClick={() => setSelectedUser(user)}
-            className={`flex items-center gap-4 p-5 rounded-3xl mb-3 cursor-pointer hover:bg-gray-800 transition-all ${
-              selectedUser?.id === user.id ? "bg-blue-600" : ""
-            }`}
-          >
-            <div className="w-12 h-12 bg-blue-600 text-white rounded-2xl flex items-center justify-center text-2xl font-semibold">
-              {user.username[0].toUpperCase()}
+    <div className="flex h-screen bg-[#0b1220] text-white">
+      {/* Sidebar – Chat Liste */}
+      <div className="w-80 border-r border-white/10 flex flex-col">
+        <div className="p-4 border-b border-white/10 font-bold text-lg">Chats</div>
+        <div className="flex-1 overflow-y-auto">
+          {chatUsers.map((user) => (
+            <div
+              key={user.id}
+              onClick={() => selectChat(user.id)}
+              className={`p-4 flex items-center gap-3 cursor-pointer hover:bg-white/10 transition-colors ${
+                selectedId === user.id ? 'bg-white/10' : ''
+              }`}
+            >
+              <div className="w-10 h-10 rounded-2xl overflow-hidden border border-white/30">
+                <img src="https://i.pravatar.cc/128" alt={user.username} className="w-full h-full object-cover" />
+              </div>
+              <div className="font-medium">{user.username}</div>
             </div>
-            <div className="font-medium">{user.username}</div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
 
-      {/* Chat Fenster */}
+      {/* Haupt-Chat */}
       <div className="flex-1 flex flex-col">
-        {selectedUser ? (
+        {selectedId ? (
           <>
             {/* Header */}
-            <div className="px-8 py-6 border-b border-gray-800 bg-[#111] flex items-center gap-4">
-              <div className="w-12 h-12 bg-blue-600 text-white rounded-2xl flex items-center justify-center text-2xl font-semibold">
-                {selectedUser.username[0].toUpperCase()}
+            <div className="p-4 border-b border-white/10 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl overflow-hidden border border-white/30 flex-shrink-0">
+                <img src="https://i.pravatar.cc/128" alt="Partner" className="w-full h-full object-cover" />
               </div>
               <div>
-                <h2 className="font-bold text-2xl">{selectedUser.username}</h2>
+                <h1 className="font-bold text-xl">
+                  {chatUsers.find(u => u.id === selectedId)?.username || 'Chat-Partner'}
+                </h1>
+                <p className="text-emerald-400 text-xs flex items-center gap-1">
+                  <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></span> online
+                </p>
               </div>
             </div>
 
-            {/* Chatverlauf */}
-            <div className="flex-1 p-8 overflow-y-auto bg-[#0a0a0a] space-y-6">
-              {messages.map((msg, i) => (
+            {/* Messages */}
+            <div className="flex-1 p-6 overflow-y-auto flex flex-col gap-4 bg-[#0b1220]">
+              {messages.map((msg) => (
                 <div
-                  key={i}
-                  className={`flex ${msg.senderId === 1 ? "justify-end" : "justify-start"}`}
+                  key={msg.id}
+                  className={`flex ${msg.senderId === currentUserId ? 'justify-end' : 'justify-start'}`}
                 >
                   <div
-                    className={`max-w-[65%] px-6 py-4 rounded-3xl text-lg ${
-                      msg.senderId === 1
-                        ? "bg-blue-600 text-white rounded-br-none"
-                        : "bg-gray-800 text-white rounded-bl-none"
-                    }`}
+                    className={`max-w-[75%] px-5 py-3 rounded-3xl text-base leading-relaxed
+                      ${msg.senderId === currentUserId
+                        ? 'bg-[#7c5cff] rounded-tr-none'
+                        : 'bg-white/10 rounded-tl-none'}`}
                   >
                     {msg.content}
+                    <div className="text-[10px] opacity-60 mt-1 text-right">
+                      {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </div>
                   </div>
                 </div>
               ))}
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Eingabefeld unten in der Mitte */}
-            <div className="p-6 bg-[#111] border-t border-gray-800">
+            {/* Input */}
+            <form onSubmit={sendMessage} className="p-4 bg-[#0b1220] border-t border-white/10">
               <div className="flex gap-3 max-w-3xl mx-auto">
                 <input
                   type="text"
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-                  className="flex-1 bg-gray-900 border border-gray-700 rounded-3xl px-6 py-5 text-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
                   placeholder="Nachricht schreiben..."
+                  className="flex-1 bg-white/10 border border-white/20 focus:border-[#7c5cff] rounded-3xl px-6 py-3 outline-none text-white placeholder:text-white/50"
                 />
                 <button
-                  onClick={sendMessage}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-10 rounded-3xl font-medium text-lg transition"
+                  type="submit"
+                  className="w-12 h-12 bg-[#7c5cff] hover:bg-[#6a4fff] rounded-3xl flex items-center justify-center transition-colors"
                 >
-                  Send
+                  ➤
                 </button>
               </div>
-            </div>
+            </form>
           </>
         ) : (
-          <div className="flex-1 flex items-center justify-center text-gray-400 text-2xl">
+          <div className="flex-1 flex items-center justify-center text-white/50 text-lg">
+            Wähle links einen Chat aus
           </div>
         )}
       </div>
