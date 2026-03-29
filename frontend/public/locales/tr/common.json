@@ -26,6 +26,17 @@
     "back": "← Geri",
     "qr_scan": "QR kodu oluşturuldu. Tarayın ve 6 haneli kodunuzu girin."
   },
+  "profile": {
+    "back": "← Geri",
+    "edit_profile": "Profili Düzenle",
+    "follow": "Takip Et",
+    "unfollow": "Takibi Bırak",
+    "posts": "Gönderi",
+    "followers": "Takipçi",
+    "following": "Takip",
+    "no_posts": "Henüz gönderi yok.",
+    "edit_soon": "Profil düzenleme yakında eklenecek"
+  },
   "home": {
     "search": "Ara...",
     "search_btn": "Ara",

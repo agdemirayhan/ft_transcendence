@@ -6,6 +6,12 @@ import { JwtAuthGuard } from '../auth/jwt/jwt.guard';
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
+  @UseGuards(JwtAuthGuard)
+  @Get('suggestions')
+  async getSuggestions(@Req() req: any) {
+    return this.usersService.getSuggestions(req.user.id);
+  }
+
   @Get(':id')
   async getProfile(@Param('id', ParseIntPipe) id: number) {
     return this.usersService.getProfile(id);

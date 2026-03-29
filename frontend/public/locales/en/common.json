@@ -26,7 +26,18 @@
     "back": "← Back",
     "qr_scan": "QR code generated. Scan it and enter your 6-digit code."
   },
-   "home": {
+   "profile": {
+    "back": "← Back",
+    "edit_profile": "Edit Profile",
+    "follow": "Follow",
+    "unfollow": "Unfollow",
+    "posts": "Posts",
+    "followers": "Followers",
+    "following": "Following",
+    "no_posts": "No posts yet.",
+    "edit_soon": "Edit profile will be added soon"
+  },
+  "home": {
     "search": "Search...",
     "search_btn": "Search",
     "profile": "Profile",

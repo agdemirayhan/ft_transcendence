@@ -60,6 +60,32 @@ export class UsersService {
     };
   }
 
+  async getSuggestions(currentUserId: number) {
+    const users = await this.prisma.user.findMany({
+      where: { id: { not: currentUserId } },
+      select: {
+        id: true,
+        username: true,
+        _count: { select: { followers: true } },
+      },
+      orderBy: { followers: { _count: 'desc' } },
+      take: 5,
+    });
+
+    const followedIds = await this.prisma.follow.findMany({
+      where: { followerId: currentUserId },
+      select: { followingId: true },
+    });
+    const followedSet = new Set(followedIds.map((f) => f.followingId));
+
+    return users.map((u) => ({
+      id: u.id,
+      username: u.username,
+      followers: u._count.followers,
+      isFollowing: followedSet.has(u.id),
+    }));
+  }
+
   async getFollowStatus(followerId: number, followingId: number) {
     const follow = await this.prisma.follow.findUnique({
       where: { followerId_followingId: { followerId, followingId } },

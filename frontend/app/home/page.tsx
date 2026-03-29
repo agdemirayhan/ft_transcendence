@@ -190,6 +190,13 @@ type UserProfile = {
   stats: { posts: number; followers: number; following: number };
 };
 
+type Suggestion = {
+  id: number;
+  username: string;
+  followers: number;
+  isFollowing: boolean;
+};
+
 export default function Home() {
   const router = useRouter();
   const { t } = useTranslation();
@@ -197,6 +204,7 @@ export default function Home() {
   const [showLogout, setShowLogout] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
 
   useEffect(() => {
     const token = Cookies.get("token");
@@ -217,6 +225,13 @@ export default function Home() {
         if (Array.isArray(data)) {
           setPosts(data.map(mapPost));
         }
+      })
+      .catch(console.error);
+
+    fetch(`${API_URL}/users/suggestions`, { headers: authHeaders() })
+      .then((r) => r.json())
+      .then((data) => {
+        if (Array.isArray(data)) setSuggestions(data);
       })
       .catch(console.error);
   }, []);
@@ -266,6 +281,23 @@ export default function Home() {
         p.map((post) =>
           post.id === id ? { ...post, liked: data.liked, likes: data.likesCount } : post
         )
+      );
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  async function toggleSuggestionFollow(userId: number, isFollowing: boolean) {
+    const method = isFollowing ? "DELETE" : "POST";
+    try {
+      const res = await fetch(`${API_URL}/users/${userId}/follow`, {
+        method,
+        headers: authHeaders(),
+      });
+      const data = await res.json();
+      if (typeof data.isFollowing !== "boolean") return;
+      setSuggestions((prev) =>
+        prev.map((s) => s.id === userId ? { ...s, isFollowing: data.isFollowing } : s)
       );
     } catch (e) {
       console.error(e);
@@ -358,28 +390,27 @@ export default function Home() {
 
           <Card title={t("home.suggestions")}>
             <div className="suggestions">
-              {[
-                { name: "Manuel", handle: "@mhummel" },
-                { name: "Taha", handle: "@tkirmizi" },
-                { name: "Leon", handle: "@ldick" },
-              ].map((u) => (
-                <div className="suggestion" key={u.handle}>
-                  <div className="row">
-                    <Avatar name={u.name} />
+              {suggestions.map((u) => (
+                <div className="suggestion" key={u.id}>
+                  <div className="row" style={{ cursor: "pointer" }} onClick={() => router.push(`/profile/${u.id}`)}>
+                    <Avatar name={u.username} />
                     <div>
-                      <div className="name">{u.name}</div>
-                      <div className="muted">{u.handle}</div>
+                      <div className="name">{u.username}</div>
+                      <div className="muted">@{u.username}</div>
                     </div>
                   </div>
                   <button
-                    className="btn btnSmall"
-                    onClick={() => alert(`${u.name} followed (fake) 🙂`)}
+                    className={u.isFollowing ? "ghostBtn" : "btn btnSmall"}
+                    onClick={() => toggleSuggestionFollow(u.id, u.isFollowing)}
                     type="button"
                   >
-                    {t("home.follow")}
+                    {u.isFollowing ? t("profile.unfollow") : t("home.follow")}
                   </button>
                 </div>
               ))}
+              {suggestions.length === 0 && (
+                <div className="muted" style={{ fontSize: 13 }}>No suggestions yet.</div>
+              )}
             </div>
           </Card>
         </aside>

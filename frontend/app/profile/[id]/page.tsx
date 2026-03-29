@@ -5,6 +5,8 @@ import { useState, useEffect } from "react";
 import { HeartIcon as HeartSolid } from "@heroicons/react/24/solid";
 import { useRouter, useParams } from "next/navigation";
 import Cookies from "js-cookie";
+import { useTranslation } from "react-i18next";
+import "../../i18n";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
 
@@ -67,6 +69,7 @@ export default function UserProfilePage() {
   const router = useRouter();
   const params = useParams();
   const id = params.id as string;
+  const { t } = useTranslation();
 
   const [user, setUser] = useState<UserProfile | null>(null);
   const [posts, setPosts] = useState<PostType[]>([]);
@@ -147,7 +150,7 @@ export default function UserProfilePage() {
     <div className="page">
       <header className="topbar">
         <button className="ghostBtn" onClick={() => router.back()} type="button">
-          ← Back
+          {t("profile.back")}
         </button>
         <span className="profileTopbarName">{user?.username ?? "Profile"}</span>
       </header>
@@ -161,8 +164,8 @@ export default function UserProfilePage() {
             {user?.username?.[0]?.toUpperCase() ?? "?"}
           </div>
           {isOwnProfile === true && (
-            <button className="ghostBtn" onClick={() => alert("Edit profile will be added soon 🙂")} type="button">
-              Edit Profile
+            <button className="ghostBtn" onClick={() => alert(t("profile.edit_soon"))} type="button">
+              {t("profile.edit_profile")}
             </button>
           )}
           {isOwnProfile === false && (
@@ -172,7 +175,7 @@ export default function UserProfilePage() {
               disabled={followLoading}
               type="button"
             >
-              {followLoading ? "..." : isFollowing ? "Unfollow" : "Follow"}
+              {followLoading ? "..." : isFollowing ? t("profile.unfollow") : t("profile.follow")}
             </button>
           )}
         </div>
@@ -186,25 +189,25 @@ export default function UserProfilePage() {
         <div className="stats profileStats">
           <div className="stat">
             <div className="statNum">{user?.stats?.posts ?? "-"}</div>
-            <div className="muted">Posts</div>
+            <div className="muted">{t("profile.posts")}</div>
           </div>
           <div className="stat">
             <div className="statNum">{user?.stats?.followers ?? "-"}</div>
-            <div className="muted">Followers</div>
+            <div className="muted">{t("profile.followers")}</div>
           </div>
           <div className="stat">
             <div className="statNum">{user?.stats?.following ?? "-"}</div>
-            <div className="muted">Following</div>
+            <div className="muted">{t("profile.following")}</div>
           </div>
         </div>
 
         <div className="profileTabs">
-          <button type="button" className="profileTab active">Posts</button>
+          <button type="button" className="profileTab active">{t("profile.posts")}</button>
         </div>
 
         <div className="feed">
           {posts.length === 0 ? (
-            <div className="muted profileEmpty">No posts yet.</div>
+            <div className="muted profileEmpty">{t("profile.no_posts")}</div>
           ) : (
             posts.map((p) => (
               <div className="card" key={p.id}>
