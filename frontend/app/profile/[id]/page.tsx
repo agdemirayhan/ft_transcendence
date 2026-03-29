@@ -70,17 +70,26 @@ export default function UserProfilePage() {
 
   const [user, setUser] = useState<UserProfile | null>(null);
   const [posts, setPosts] = useState<PostType[]>([]);
-  const [isOwnProfile, setIsOwnProfile] = useState(false);
+  const [isOwnProfile, setIsOwnProfile] = useState<boolean | null>(null);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followLoading, setFollowLoading] = useState(false);
 
   useEffect(() => {
     const token = Cookies.get("token");
     if (!token) { router.push("/"); return; }
 
-    // Check if this is the current user's profile
+    // Check if this is the current user's profile and get follow status
     fetch(`${API_URL}/auth/me`, { headers: authHeaders() })
       .then((r) => r.json())
       .then((me) => {
-        setIsOwnProfile(String(me.id) === String(id));
+        const own = String(me.id) === String(id);
+        setIsOwnProfile(own);
+        if (!own) {
+          fetch(`${API_URL}/users/${id}/follow-status`, { headers: authHeaders() })
+            .then((r) => r.json())
+            .then((data) => setIsFollowing(data.isFollowing))
+            .catch(console.error);
+        }
       });
 
     fetch(`${API_URL}/users/${id}`, { headers: authHeaders() })
@@ -105,6 +114,35 @@ export default function UserProfilePage() {
       .catch(console.error);
   }, [id]);
 
+  async function toggleFollow() {
+    setFollowLoading(true);
+    const method = isFollowing ? "DELETE" : "POST";
+    try {
+      const res = await fetch(`${API_URL}/users/${id}/follow`, {
+        method,
+        headers: authHeaders(),
+      });
+      const data = await res.json();
+      if (typeof data.isFollowing !== "boolean") return;
+      setIsFollowing(data.isFollowing);
+      setUser((prev) =>
+        prev
+          ? {
+              ...prev,
+              stats: {
+                ...prev.stats,
+                followers: prev.stats.followers + (data.isFollowing ? 1 : -1),
+              },
+            }
+          : prev
+      );
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setFollowLoading(false);
+    }
+  }
+
   return (
     <div className="page">
       <header className="topbar">
@@ -122,9 +160,19 @@ export default function UserProfilePage() {
           <div className="profileAvatar">
             {user?.username?.[0]?.toUpperCase() ?? "?"}
           </div>
-          {isOwnProfile && (
+          {isOwnProfile === true && (
             <button className="ghostBtn" onClick={() => alert("Edit profile will be added soon 🙂")} type="button">
               Edit Profile
+            </button>
+          )}
+          {isOwnProfile === false && (
+            <button
+              className={isFollowing ? "ghostBtn" : "btn btnSmall"}
+              onClick={toggleFollow}
+              disabled={followLoading}
+              type="button"
+            >
+              {followLoading ? "..." : isFollowing ? "Unfollow" : "Follow"}
             </button>
           )}
         </div>
