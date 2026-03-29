@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -42,6 +42,61 @@ export class UsersService {
         posts: user._count.posts,
         followers: user._count.followers,
         following: user._count.following,
+      },
+    };
+  }
+
+  async toggleFollow(followerId: number, followingId: number) {
+    if (followerId === followingId) {
+      throw new BadRequestException('You cannot follow yourself');
+    }
+
+    const targetUser = await this.prisma.user.findUnique({
+      where: { id: followingId },
+      select: { id: true },
+    });
+    if (!targetUser) {
+      throw new NotFoundException('Target user not found');
+    }
+
+    const existing = await this.prisma.follow.findUnique({
+      where: {
+        followerId_followingId: {
+          followerId,
+          followingId,
+        },
+      },
+    });
+
+    if (existing) {
+      await this.prisma.follow.delete({
+        where: {
+          followerId_followingId: {
+            followerId,
+            followingId,
+          },
+        },
+      });
+    } else {
+      await this.prisma.follow.create({
+        data: {
+          followerId,
+          followingId,
+        },
+      });
+    }
+
+    const [followers, following] = await Promise.all([
+      this.prisma.follow.count({ where: { followingId } }),
+      this.prisma.follow.count({ where: { followerId } }),
+    ]);
+
+    return {
+      followingId,
+      following: !existing,
+      stats: {
+        followers,
+        following,
       },
     };
   }
