@@ -299,7 +299,12 @@ export default function Home() {
 
       setFadingIds((prev) => new Set(prev).add(userId));
       setTimeout(() => {
-        window.location.reload();
+        setSuggestions((prev) => prev.filter((s) => s.id !== userId));
+        setFadingIds((prev) => { const next = new Set(prev); next.delete(userId); return next; });
+        setCurrentUser((prev) => prev ? {
+          ...prev,
+          stats: { ...prev.stats, following: prev.stats.following + 1 },
+        } : prev);
       }, 400);
     } catch (e) {
       console.error(e);

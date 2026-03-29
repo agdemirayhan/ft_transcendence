@@ -24,6 +24,7 @@ type PostType = {
   time: string;
   content: string;
   likes: number;
+  liked: boolean;
 };
 
 function timeAgo(dateStr: string): string {
@@ -42,7 +43,8 @@ function authHeaders(): HeadersInit {
   };
 }
 
-function Post({ post }: { post: PostType }) {
+function Post({ post, onToggleLike }: { post: PostType; onToggleLike: (id: number) => void }) {
+  const { t } = useTranslation();
   return (
     <div className="post">
       <Avatar name={post.author} />
@@ -57,8 +59,22 @@ function Post({ post }: { post: PostType }) {
         </div>
         <div className="postContent">{post.content}</div>
         <div className="postActions">
-          <HeartSolid className="icon" style={{ width: 18, height: 18, color: "var(--muted)" }} />
+          <button
+            className={`iconBtn ${post.liked ? "liked" : ""}`}
+            onClick={() => onToggleLike(post.id)}
+            aria-label="Like"
+            type="button"
+          >
+            <HeartSolid className={`icon ${post.liked ? "liked" : ""}`} />
+          </button>
           <span className="muted">{post.likes}</span>
+          <span className="spacer" />
+          <button className="ghostBtn" onClick={() => alert("We'll add this later 🙂")} type="button">
+            {t("home.comment")}
+          </button>
+          <button className="ghostBtn" onClick={() => alert("We'll add this later 🙂")} type="button">
+            {t("home.share")}
+          </button>
         </div>
       </div>
     </div>
@@ -111,11 +127,36 @@ export default function UserProfilePage() {
             time: timeAgo(p.createdAt),
             content: p.content,
             likes: p._count?.likes ?? 0,
+            liked: false,
           })));
         }
       })
       .catch(console.error);
   }, [id]);
+
+  async function toggleLike(id: number) {
+    setPosts((p) =>
+      p.map((post) => {
+        if (post.id !== id) return post;
+        const liked = !post.liked;
+        return { ...post, liked, likes: liked ? post.likes + 1 : Math.max(0, post.likes - 1) };
+      })
+    );
+    try {
+      const res = await fetch(`${API_URL}/posts/${id}/like`, {
+        method: "POST",
+        headers: authHeaders(),
+      });
+      const data = await res.json();
+      setPosts((p) =>
+        p.map((post) =>
+          post.id === id ? { ...post, liked: data.liked, likes: data.likesCount } : post
+        )
+      );
+    } catch (e) {
+      console.error(e);
+    }
+  }
 
   async function toggleFollow() {
     setFollowLoading(true);
@@ -211,7 +252,7 @@ export default function UserProfilePage() {
           ) : (
             posts.map((p) => (
               <div className="card" key={p.id}>
-                <Post post={p} />
+                <Post post={p} onToggleLike={toggleLike} />
               </div>
             ))
           )}
