@@ -62,7 +62,10 @@ export class UsersService {
 
   async getSuggestions(currentUserId: number) {
     const users = await this.prisma.user.findMany({
-      where: { id: { not: currentUserId } },
+      where: {
+        id: { not: currentUserId },
+        followers: { none: { followerId: currentUserId } },
+      },
       select: {
         id: true,
         username: true,
@@ -72,17 +75,11 @@ export class UsersService {
       take: 5,
     });
 
-    const followedIds = await this.prisma.follow.findMany({
-      where: { followerId: currentUserId },
-      select: { followingId: true },
-    });
-    const followedSet = new Set(followedIds.map((f) => f.followingId));
-
     return users.map((u) => ({
       id: u.id,
       username: u.username,
       followers: u._count.followers,
-      isFollowing: followedSet.has(u.id),
+      isFollowing: false,
     }));
   }
 

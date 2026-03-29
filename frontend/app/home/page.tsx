@@ -205,6 +205,7 @@ export default function Home() {
   const [authChecked, setAuthChecked] = useState(false);
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [fadingIds, setFadingIds] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     const token = Cookies.get("token");
@@ -287,18 +288,19 @@ export default function Home() {
     }
   }
 
-  async function toggleSuggestionFollow(userId: number, isFollowing: boolean) {
-    const method = isFollowing ? "DELETE" : "POST";
+  async function toggleSuggestionFollow(userId: number) {
     try {
       const res = await fetch(`${API_URL}/users/${userId}/follow`, {
-        method,
+        method: "POST",
         headers: authHeaders(),
       });
       const data = await res.json();
       if (typeof data.isFollowing !== "boolean") return;
-      setSuggestions((prev) =>
-        prev.map((s) => s.id === userId ? { ...s, isFollowing: data.isFollowing } : s)
-      );
+
+      setFadingIds((prev) => new Set(prev).add(userId));
+      setTimeout(() => {
+        window.location.reload();
+      }, 400);
     } catch (e) {
       console.error(e);
     }
@@ -391,7 +393,15 @@ export default function Home() {
           <Card title={t("home.suggestions")}>
             <div className="suggestions">
               {suggestions.map((u) => (
-                <div className="suggestion" key={u.id}>
+                <div
+                  className="suggestion"
+                  key={u.id}
+                  style={{
+                    transition: "opacity 0.4s ease, transform 0.4s ease",
+                    opacity: fadingIds.has(u.id) ? 0 : 1,
+                    transform: fadingIds.has(u.id) ? "translateX(12px)" : "none",
+                  }}
+                >
                   <div className="row" style={{ cursor: "pointer" }} onClick={() => router.push(`/profile/${u.id}`)}>
                     <Avatar name={u.username} />
                     <div>
@@ -400,11 +410,11 @@ export default function Home() {
                     </div>
                   </div>
                   <button
-                    className={u.isFollowing ? "ghostBtn" : "btn btnSmall"}
-                    onClick={() => toggleSuggestionFollow(u.id, u.isFollowing)}
+                    className="btn btnSmall"
+                    onClick={() => toggleSuggestionFollow(u.id)}
                     type="button"
                   >
-                    {u.isFollowing ? t("profile.unfollow") : t("home.follow")}
+                    {t("home.follow")}
                   </button>
                 </div>
               ))}
