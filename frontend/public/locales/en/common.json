@@ -20,13 +20,24 @@
     "delete_modal_desc": "This action cannot be undone. Type DELETE to confirm.",
     "delete_placeholder": "Type \"DELETE\"",
     "cancel": "Cancel",
-    "delete_permanently": "Delete permanently",
+    "delete_permanently": "Delete permanently", 
     "deleting": "Deleting...",
     "language_updated": "Language updated.",
     "back": "← Back",
     "qr_scan": "QR code generated. Scan it and enter your 6-digit code."
   },
-   "home": {
+   "profile": {
+    "back": "← Back",
+    "edit_profile": "Edit Profile",
+    "follow": "Follow",
+    "unfollow": "Unfollow",
+    "posts": "Posts",
+    "followers": "Followers",
+    "following": "Following",
+    "no_posts": "No posts yet.",
+    "edit_soon": "Edit profile will be added soon"
+  },
+  "home": {
     "search": "Search...",
     "search_btn": "Search",
     "profile": "Profile",

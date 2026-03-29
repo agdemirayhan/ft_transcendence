@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
 import Image from "next/image";
@@ -16,6 +16,10 @@ export default function AuthPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [shake, setShake] = useState(false);
+
+  useEffect(() => {
+    if (Cookies.get("token")) router.replace("/home");
+  }, []);
 
   function triggerShake() {
     setShake(true);

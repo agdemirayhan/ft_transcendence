@@ -20,6 +20,7 @@ if (!i18n.isInitialized) {
       },
       fallbackLng: 'en',
       defaultNS: 'common',
+      initImmediate: false,
       interpolation: { escapeValue: false },
       detection: {
         order: ['localStorage'],

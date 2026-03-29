@@ -242,6 +242,20 @@ button:active {
 }
 .ghostBtn:hover { background: rgba(255,255,255,0.08); }
 
+.primaryBtn {
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  padding: 8px 18px;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.primaryBtn:hover { opacity: 0.85; }
+.primaryBtn:disabled { opacity: 0.5; cursor: default; }
+
 .iconBtn {
   border: 1px solid var(--border);
   background: rgba(255,255,255,0.04);

@@ -5,6 +5,8 @@ import { useState, useEffect } from "react";
 import { HeartIcon as HeartSolid } from "@heroicons/react/24/solid";
 import { useRouter, useParams } from "next/navigation";
 import Cookies from "js-cookie";
+import { useTranslation } from "react-i18next";
+import "../../i18n";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
 
@@ -22,6 +24,7 @@ type PostType = {
   time: string;
   content: string;
   likes: number;
+  liked: boolean;
 };
 
 function timeAgo(dateStr: string): string {
@@ -40,7 +43,8 @@ function authHeaders(): HeadersInit {
   };
 }
 
-function Post({ post }: { post: PostType }) {
+function Post({ post, onToggleLike }: { post: PostType; onToggleLike: (id: number) => void }) {
+  const { t } = useTranslation();
   return (
     <div className="post">
       <Avatar name={post.author} />
@@ -55,8 +59,22 @@ function Post({ post }: { post: PostType }) {
         </div>
         <div className="postContent">{post.content}</div>
         <div className="postActions">
-          <HeartSolid className="icon" style={{ width: 18, height: 18, color: "var(--muted)" }} />
+          <button
+            className={`iconBtn ${post.liked ? "liked" : ""}`}
+            onClick={() => onToggleLike(post.id)}
+            aria-label="Like"
+            type="button"
+          >
+            <HeartSolid className={`icon ${post.liked ? "liked" : ""}`} />
+          </button>
           <span className="muted">{post.likes}</span>
+          <span className="spacer" />
+          <button className="ghostBtn" onClick={() => alert("We'll add this later 🙂")} type="button">
+            {t("home.comment")}
+          </button>
+          <button className="ghostBtn" onClick={() => alert("We'll add this later 🙂")} type="button">
+            {t("home.share")}
+          </button>
         </div>
       </div>
     </div>
@@ -67,20 +85,30 @@ export default function UserProfilePage() {
   const router = useRouter();
   const params = useParams();
   const id = params.id as string;
+  const { t } = useTranslation();
 
   const [user, setUser] = useState<UserProfile | null>(null);
   const [posts, setPosts] = useState<PostType[]>([]);
-  const [isOwnProfile, setIsOwnProfile] = useState(false);
+  const [isOwnProfile, setIsOwnProfile] = useState<boolean | null>(null);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followLoading, setFollowLoading] = useState(false);
 
   useEffect(() => {
     const token = Cookies.get("token");
     if (!token) { router.push("/"); return; }
 
-    // Check if this is the current user's profile
+    // Check if this is the current user's profile and get follow status
     fetch(`${API_URL}/auth/me`, { headers: authHeaders() })
       .then((r) => r.json())
       .then((me) => {
-        setIsOwnProfile(String(me.id) === String(id));
+        const own = String(me.id) === String(id);
+        setIsOwnProfile(own);
+        if (!own) {
+          fetch(`${API_URL}/users/${id}/follow-status`, { headers: authHeaders() })
+            .then((r) => r.json())
+            .then((data) => setIsFollowing(data.isFollowing))
+            .catch(console.error);
+        }
       });
 
     fetch(`${API_URL}/users/${id}`, { headers: authHeaders() })
@@ -99,17 +127,71 @@ export default function UserProfilePage() {
             time: timeAgo(p.createdAt),
             content: p.content,
             likes: p._count?.likes ?? 0,
+            liked: false,
           })));
         }
       })
       .catch(console.error);
   }, [id]);
 
+  async function toggleLike(id: number) {
+    setPosts((p) =>
+      p.map((post) => {
+        if (post.id !== id) return post;
+        const liked = !post.liked;
+        return { ...post, liked, likes: liked ? post.likes + 1 : Math.max(0, post.likes - 1) };
+      })
+    );
+    try {
+      const res = await fetch(`${API_URL}/posts/${id}/like`, {
+        method: "POST",
+        headers: authHeaders(),
+      });
+      const data = await res.json();
+      setPosts((p) =>
+        p.map((post) =>
+          post.id === id ? { ...post, liked: data.liked, likes: data.likesCount } : post
+        )
+      );
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  async function toggleFollow() {
+    setFollowLoading(true);
+    const method = isFollowing ? "DELETE" : "POST";
+    try {
+      const res = await fetch(`${API_URL}/users/${id}/follow`, {
+        method,
+        headers: authHeaders(),
+      });
+      const data = await res.json();
+      if (typeof data.isFollowing !== "boolean") return;
+      setIsFollowing(data.isFollowing);
+      setUser((prev) =>
+        prev
+          ? {
+              ...prev,
+              stats: {
+                ...prev.stats,
+                followers: prev.stats.followers + (data.isFollowing ? 1 : -1),
+              },
+            }
+          : prev
+      );
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setFollowLoading(false);
+    }
+  }
+
   return (
     <div className="page">
       <header className="topbar">
         <button className="ghostBtn" onClick={() => router.back()} type="button">
-          ← Back
+          {t("profile.back")}
         </button>
         <span className="profileTopbarName">{user?.username ?? "Profile"}</span>
       </header>
@@ -122,9 +204,19 @@ export default function UserProfilePage() {
           <div className="profileAvatar">
             {user?.username?.[0]?.toUpperCase() ?? "?"}
           </div>
-          {isOwnProfile && (
-            <button className="ghostBtn" onClick={() => alert("Edit profile will be added soon 🙂")} type="button">
-              Edit Profile
+          {isOwnProfile === true && (
+            <button className="ghostBtn" onClick={() => alert(t("profile.edit_soon"))} type="button">
+              {t("profile.edit_profile")}
+            </button>
+          )}
+          {isOwnProfile === false && (
+            <button
+              className={isFollowing ? "ghostBtn" : "btn btnSmall"}
+              onClick={toggleFollow}
+              disabled={followLoading}
+              type="button"
+            >
+              {followLoading ? "..." : isFollowing ? t("profile.unfollow") : t("profile.follow")}
             </button>
           )}
         </div>
@@ -138,29 +230,29 @@ export default function UserProfilePage() {
         <div className="stats profileStats">
           <div className="stat">
             <div className="statNum">{user?.stats?.posts ?? "-"}</div>
-            <div className="muted">Posts</div>
+            <div className="muted">{t("profile.posts")}</div>
           </div>
           <div className="stat">
             <div className="statNum">{user?.stats?.followers ?? "-"}</div>
-            <div className="muted">Followers</div>
+            <div className="muted">{t("profile.followers")}</div>
           </div>
           <div className="stat">
             <div className="statNum">{user?.stats?.following ?? "-"}</div>
-            <div className="muted">Following</div>
+            <div className="muted">{t("profile.following")}</div>
           </div>
         </div>
 
         <div className="profileTabs">
-          <button type="button" className="profileTab active">Posts</button>
+          <button type="button" className="profileTab active">{t("profile.posts")}</button>
         </div>
 
         <div className="feed">
           {posts.length === 0 ? (
-            <div className="muted profileEmpty">No posts yet.</div>
+            <div className="muted profileEmpty">{t("profile.no_posts")}</div>
           ) : (
             posts.map((p) => (
               <div className="card" key={p.id}>
-                <Post post={p} />
+                <Post post={p} onToggleLike={toggleLike} />
               </div>
             ))
           )}
