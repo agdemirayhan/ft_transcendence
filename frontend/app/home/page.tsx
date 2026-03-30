@@ -148,6 +148,55 @@ function Post({
   );
 }
 
+type FollowUser = { id: number; username: string; followers: number };
+
+function FollowingModal({ onClose }: { onClose: () => void }) {
+  const router = useRouter();
+  const [list, setList] = useState<FollowUser[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(`${API_URL}/users/me/following`, { headers: authHeaders() })
+      .then((r) => r.json())
+      .then((data) => { if (Array.isArray(data)) setList(data); })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, []);
+
+  return (
+    <div style={{
+      position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)",
+      display: "grid", placeItems: "center", padding: 16, zIndex: 1000,
+    }} onClick={onClose}>
+      <div style={{
+        width: "100%", maxWidth: 400, background: "var(--card)",
+        border: "1px solid var(--border)", borderRadius: 16, padding: 20,
+        boxShadow: "0 20px 40px rgba(0,0,0,0.2)", display: "grid", gap: 12,
+        maxHeight: "70vh", overflow: "hidden",
+      }} onClick={(e) => e.stopPropagation()}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <h2 style={{ margin: 0 }}>Following</h2>
+          <button className="ghostBtn" onClick={onClose} type="button">✕</button>
+        </div>
+        <div style={{ overflowY: "auto", display: "grid", gap: 10 }}>
+          {loading && <div className="muted">Loading...</div>}
+          {!loading && list.length === 0 && <div className="muted">Not following anyone yet.</div>}
+          {list.map((u) => (
+            <div key={u.id} style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}
+              onClick={() => { onClose(); router.push(`/profile/${u.id}`); }}>
+              <Avatar name={u.username} />
+              <div>
+                <div className="name">{u.username}</div>
+                <div className="muted">@{u.username}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function LogoutModal({ onConfirm, onCancel }: { onConfirm: () => void; onCancel: () => void }) {
   return (
     <div style={{
@@ -206,6 +255,7 @@ export default function Home() {
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [fadingIds, setFadingIds] = useState<Set<number>>(new Set());
+  const [showFollowing, setShowFollowing] = useState(false);
 
   useEffect(() => {
     const token = Cookies.get("token");
@@ -350,7 +400,7 @@ export default function Home() {
                 <div className="statNum">{currentUser?.stats?.followers ?? "-"}</div>
                 <div className="muted">{t("home.followers")}</div>
               </div>
-              <div className="stat">
+              <div className="stat" style={{ cursor: "pointer" }} onClick={() => setShowFollowing(true)}>
                 <div className="statNum">{currentUser?.stats?.following ?? "-"}</div>
                 <div className="muted">{t("home.following")}</div>
               </div>
@@ -434,6 +484,7 @@ export default function Home() {
       </main>
 
       <footer className="footer muted">miniSocial</footer>
+      {showFollowing && <FollowingModal onClose={() => setShowFollowing(false)} />}
       {showLogout && (
         <LogoutModal
           onConfirm={() => {

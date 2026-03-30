@@ -12,6 +12,12 @@ export class UsersController {
     return this.usersService.getSuggestions(req.user.id);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Get('me/following')
+  async getFollowing(@Req() req: any) {
+    return this.usersService.getFollowing(req.user.id);
+  }
+
   @Get(':id')
   async getProfile(@Param('id', ParseIntPipe) id: number) {
     return this.usersService.getProfile(id);
