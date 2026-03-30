@@ -118,7 +118,7 @@ function Post({
       <div className="postBody">
         <div className="postHeader">
           <div className="postAuthor">
-            <span className="name" style={{ cursor: "pointer" }} onClick={() => router.push(`/profile/${post.authorId}`)}>{post.author}</span>
+            <span className="name" onClick={() => router.push(`/profile/${post.authorId}`)}>{post.author}</span>
             <span className="handle">{post.handle}</span>
             <span className="dot">•</span>
             <span className="time">{post.time}</span>
@@ -148,36 +148,66 @@ function Post({
   );
 }
 
-function LogoutModal({ onConfirm, onCancel }: { onConfirm: () => void; onCancel: () => void }) {
+type FollowUser = { id: number; username: string; followers: number };
+
+function FollowingModal({ type, onClose }: { type: "following" | "followers"; onClose: () => void }) {
+  const router = useRouter();
+  const [list, setList] = useState<FollowUser[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = ""; };
+  }, []);
+
+  useEffect(() => {
+    fetch(`${API_URL}/users/me/${type}`, { headers: authHeaders() })
+      .then((r) => r.json())
+      .then((data) => { if (Array.isArray(data)) setList(data); })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [type]);
+
   return (
-    <div style={{
-      position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)",
-      display: "grid", placeItems: "center", padding: 16, zIndex: 1000,
-    }}>
-      <div style={{
-        width: "100%", maxWidth: 420, background: "var(--card)",
-        border: "1px solid var(--border)", borderRadius: 16, padding: 20,
-        boxShadow: "0 20px 40px rgba(0,0,0,0.2)", display: "grid", gap: 12,
-      }}>
-        <h2 style={{ margin: 0 }}>Log out</h2>
-        <p className="muted" style={{ margin: 0 }}>
-          Are you sure you want to log out?
-        </p>
-        <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
-          <button
-            type="button"
-            className="ghostBtn"
-            onClick={onCancel}
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            className="btn"
-            onClick={onConfirm}
-          >
-            Log out
-          </button>
+    <div className="modalOverlay" style={{ backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)" }} onClick={onClose}>
+      <div className="modal" style={{ maxWidth: 400 }} onClick={(e) => e.stopPropagation()}>
+        <div className="modalHeader">
+          <h2>{type === "following" ? "Following" : "Followers"}</h2>
+          <button className="ghostBtn" onClick={onClose} type="button">✕</button>
+        </div>
+        <div className="modalList">
+          {loading && <div className="muted">Loading...</div>}
+          {!loading && list.length === 0 && <div className="muted">No {type} yet.</div>}
+          {list.map((u) => (
+            <div key={u.id} className="modalListItem"
+              onClick={() => { onClose(); router.push(`/profile/${u.id}`); }}>
+              <Avatar name={u.username} />
+              <div>
+                <div className="name">{u.username}</div>
+                <div className="muted">@{u.username}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LogoutModal({ onConfirm, onCancel }: { onConfirm: () => void; onCancel: () => void }) {
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = ""; };
+  }, []);
+
+  return (
+    <div className="modalOverlay" style={{ backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)" }} onClick={onCancel}>
+      <div className="modal" style={{ maxWidth: 420 }} onClick={(e) => e.stopPropagation()}>
+        <h2>Log out</h2>
+        <p className="muted">Are you sure you want to log out?</p>
+        <div className="modalActions">
+          <button type="button" className="ghostBtn" onClick={onCancel}>Cancel</button>
+          <button type="button" className="btn" onClick={onConfirm}>Log out</button>
         </div>
       </div>
     </div>
@@ -206,6 +236,7 @@ export default function Home() {
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [fadingIds, setFadingIds] = useState<Set<number>>(new Set());
+  const [showFollowing, setShowFollowing] = useState<"following" | "followers" | null>(null);
 
   useEffect(() => {
     const token = Cookies.get("token");
@@ -314,6 +345,7 @@ export default function Home() {
   if (!authChecked) return null;
 
   return (
+    <>
     <div className="page">
       <header className="topbar">
         <div className="brand">
@@ -323,7 +355,7 @@ export default function Home() {
         <button className="btn btnSmall" onClick={() => alert("Search later 🙂")} type="button">
           {t("home.search_btn")}
         </button>
-        <span style={{ flex: 1 }} />
+        <span className="spacer" />
         <button className="btn btnSmall btnOutline" onClick={() => setShowLogout(true)} type="button">
           Log out
         </button>
@@ -346,11 +378,11 @@ export default function Home() {
                 <div className="statNum">{currentUser?.stats?.posts ?? "-"}</div>
                 <div className="muted">{t("home.posts")}</div>
               </div>
-              <div className="stat">
+              <div className="stat statClickable" onClick={() => setShowFollowing("followers")}>
                 <div className="statNum">{currentUser?.stats?.followers ?? "-"}</div>
                 <div className="muted">{t("home.followers")}</div>
               </div>
-              <div className="stat">
+              <div className="stat statClickable" onClick={() => setShowFollowing("following")}>
                 <div className="statNum">{currentUser?.stats?.following ?? "-"}</div>
                 <div className="muted">{t("home.following")}</div>
               </div>
@@ -402,12 +434,11 @@ export default function Home() {
                   className="suggestion"
                   key={u.id}
                   style={{
-                    transition: "opacity 0.4s ease, transform 0.4s ease",
                     opacity: fadingIds.has(u.id) ? 0 : 1,
                     transform: fadingIds.has(u.id) ? "translateX(12px)" : "none",
                   }}
                 >
-                  <div className="row" style={{ cursor: "pointer" }} onClick={() => router.push(`/profile/${u.id}`)}>
+                  <div className="row" onClick={() => router.push(`/profile/${u.id}`)}>
                     <Avatar name={u.username} />
                     <div>
                       <div className="name">{u.username}</div>
@@ -434,17 +465,18 @@ export default function Home() {
       </main>
 
       <footer className="footer muted">miniSocial</footer>
-      {showLogout && (
-        <LogoutModal
-          onConfirm={() => {
-            Cookies.remove("token");
-            setShowLogout(false);
-            router.push("/");
-          }}
-          onCancel={() => setShowLogout(false)}
-        />
-      )}
     </div>
-    
+    {showFollowing && <FollowingModal type={showFollowing} onClose={() => setShowFollowing(null)} />}
+    {showLogout && (
+      <LogoutModal
+        onConfirm={() => {
+          Cookies.remove("token");
+          setShowLogout(false);
+          router.push("/");
+        }}
+        onCancel={() => setShowLogout(false)}
+      />
+    )}
+    </>
   );
 }
