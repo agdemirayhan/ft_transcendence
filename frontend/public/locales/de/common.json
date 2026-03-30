@@ -26,6 +26,17 @@
     "back": "← Zurück",
     "qr_scan": "QR-Code generiert. Scannen Sie ihn und geben Sie Ihren 6-stelligen Code ein."
   },
+  "profile": {
+    "back": "← Zurück",
+    "edit_profile": "Profil bearbeiten",
+    "follow": "Folgen",
+    "unfollow": "Entfolgen",
+    "posts": "Beiträge",
+    "followers": "Follower",
+    "following": "Gefolgt",
+    "no_posts": "Noch keine Beiträge.",
+    "edit_soon": "Profil bearbeiten wird bald hinzugefügt"
+  },
   "home": {
     "search": "Suchen...",
     "search_btn": "Suchen",

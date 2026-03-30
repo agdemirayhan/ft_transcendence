@@ -1,36 +1,28 @@
 "use client";
 
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Avatar from "@/components/Avatar";
+import Cookies from "js-cookie";
 
-export default function ProfilePage() {
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
+
+export default function ProfileRedirect() {
   const router = useRouter();
 
-  return (
-    <div className="page">
-      <header className="topbar">
-        <button className="ghostBtn" onClick={() => router.back()} type="button">
-          ← Back
-        </button>
-      </header>
+  useEffect(() => {
+    const token = Cookies.get("token");
+    if (!token) { router.push("/"); return; }
 
-      <main style={{ maxWidth: 600, margin: "40px auto", padding: "0 16px" }}>
-        <div className="card">
-          <div className="profile">
-            <Avatar name="Ayhan" />
-            <div>
-              <div className="profileName">Ayhan</div>
-              <div className="muted">@ayhan</div>
-            </div>
-          </div>
+    fetch(`${API_URL}/auth/me`, {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    })
+      .then((r) => r.json())
+      .then((data) => router.replace(`/profile/${data.id}`))
+      .catch(() => router.push("/"));
+  }, []);
 
-          <div className="stats">
-            <div className="stat"><div className="statNum">12</div><div className="muted">Posts</div></div>
-            <div className="stat"><div className="statNum">340</div><div className="muted">Followers</div></div>
-            <div className="stat"><div className="statNum">180</div><div className="muted">Following</div></div>
-          </div>
-        </div>
-      </main>
-    </div>
-  );
+  return null;
 }
