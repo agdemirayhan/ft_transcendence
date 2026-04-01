@@ -392,6 +392,38 @@ button:active {
 .postActions { display: flex; gap: 8px; align-items: center; margin-top: 4px; }
 .spacer { flex: 1; }
 
+.commentCount {
+  color: var(--muted);
+  font-size: 13px;
+  cursor: pointer;
+  margin-left: 10px;
+}
+.commentCount:hover { text-decoration: underline; }
+.commentCount.muted {
+  cursor: default;
+}
+.commentCount.muted:hover { text-decoration: none; }
+
+.commentsList {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 20px;
+  padding-top: 16px;
+  padding-left: 22px;
+  border-top: 1px solid var(--border);
+}
+
+.commentItem {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.commentItem span {
+  display: inline;
+  margin-right: 6px;
+}
+
 .chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .chip {
   padding: 7px 10px;
