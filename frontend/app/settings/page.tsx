@@ -280,15 +280,8 @@ export default function SettingsPage() {
       </main>
 
       {showDeleteModal ? (
-        <div style={{
-          position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)",
-          display: "grid", placeItems: "center", padding: 16, zIndex: 1000,
-        }}>
-          <div style={{
-            width: "100%", maxWidth: 420, background: "var(--card)",
-            border: "1px solid var(--border)", borderRadius: 16, padding: 20,
-            boxShadow: "0 20px 40px rgba(0,0,0,0.2)", display: "grid", gap: 12,
-          }}>
+        <div className="modalOverlay" style={{ backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)" }}>
+          <div className="modal" style={{ maxWidth: 420 }}>
             <h2 style={{ margin: 0 }}>{t("settings.delete_modal_title")}</h2>
             <p className="muted" style={{ margin: 0 }}>
               {t("settings.delete_modal_desc")}

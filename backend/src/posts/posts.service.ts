@@ -54,6 +54,39 @@ export class PostsService {
     return posts.map((post) => this.toResponse(post));
   }
 
+  async feed(userId: number) {
+    const following = await this.prisma.follow.findMany({
+      where: { followerId: userId },
+      select: { followingId: true },
+    });
+
+    const followingIds = following.map((f) => f.followingId);
+
+    const posts = await this.prisma.post.findMany({
+      where: {
+        authorId: { in: [...followingIds, userId] },
+      },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        author: {
+          select: {
+            id: true,
+            username: true,
+            avatarUrl: true,
+          },
+        },
+        _count: {
+          select: {
+            likes: true,
+            comments: true,
+          },
+        },
+      },
+    });
+
+    return posts.map((post) => this.toResponse(post));
+  }
+
   async create(authorId: number, content: string) {
     const trimmed = content?.trim();
     if (!trimmed) {

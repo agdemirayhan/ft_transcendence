@@ -18,6 +18,7 @@ type PostType = {
   time: string;
   content: string;
   likes: number;
+  comments: number;
   liked: boolean;
 };
 
@@ -42,7 +43,7 @@ function mapPost(p: {
   content: string;
   createdAt: string;
   author: { id: number; username: string };
-  counts: { likes: number };
+  counts: { likes: number; comments: number };
 }): PostType {
   return {
     id: p.id,
@@ -52,6 +53,7 @@ function mapPost(p: {
     time: timeAgo(p.createdAt),
     content: p.content,
     likes: p.counts.likes,
+    comments: p.counts.comments ?? 0,
     liked: false,
   };
 }
@@ -111,6 +113,48 @@ function Post({
 }) {
   const { t } = useTranslation();
   const router = useRouter();
+  const [showCommentBox, setShowCommentBox] = useState(false);
+  const [commentText, setCommentText] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [commentCount, setCommentCount] = useState(post.comments ?? 0);
+  const [showComments, setShowComments] = useState(false);
+  const [commentsList, setCommentsList] = useState<{ id: number; author: { username: string }; content: string; createdAt: string }[]>([]);
+  const [loadingComments, setLoadingComments] = useState(false);
+
+  async function toggleComments() {
+    if (showComments) { setShowComments(false); return; }
+    setShowComments(true);
+    if (commentsList.length > 0) return;
+    setLoadingComments(true);
+    try {
+      const res = await fetch(`${API_URL}/posts/${post.id}/comments`, { headers: authHeaders() });
+      const data = await res.json();
+      if (Array.isArray(data)) setCommentsList(data);
+    } finally {
+      setLoadingComments(false);
+    }
+  }
+
+  async function submitComment() {
+    const trimmed = commentText.trim();
+    if (!trimmed || isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      const res = await fetch(`${API_URL}/posts/${post.id}/comments`, {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify({ content: trimmed }),
+      });
+      const newComment = await res.json();
+      setCommentCount((c) => c + 1);
+      setCommentsList((prev) => [newComment, ...prev]);
+      setShowComments(true);
+      setCommentText("");
+      setShowCommentBox(false);
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
 
   return (
     <div className="post">
@@ -135,15 +179,54 @@ function Post({
             <HeartSolid className={`icon ${post.liked ? "liked" : ""}`} />
           </button>
           <span className="muted">{post.likes}</span>
+          {commentCount > 0 ? <span className="commentCount" onClick={toggleComments}>{commentCount} {t("home.comments")}</span> : null}
           <span className="spacer" />
-          <button className="ghostBtn" onClick={() => alert("We'll add this later 🙂")} type="button">
+          <button className="btn btnSmall" onClick={() => setShowCommentBox((v) => !v)} type="button">
             {t("home.comment")}
           </button>
           <button className="ghostBtn" onClick={() => alert("We'll add this later 🙂")} type="button">
             {t("home.share")}
           </button>
         </div>
+        {showCommentBox ? (
+          <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+            <input
+              className="authInput"
+              style={{ flex: 1, padding: "8px 12px" }}
+              placeholder={t("home.write_comment")}
+              value={commentText}
+              onChange={(e) => setCommentText(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") submitComment(); }}
+              autoFocus
+            />
+            <button
+              className="btn"
+              type="button"
+              onClick={submitComment}
+              disabled={!commentText.trim() || isSubmitting}
+            >
+              {t("home.send")}
+            </button>
+          </div>
+        ) : null}
       </div>
+      {showComments ? (
+        <div className="commentsList">
+          {loadingComments ? <p className="muted">Loading...</p> : null}
+          {commentsList.map((c) => (
+            <div key={c.id} className="commentItem">
+              <Avatar name={c.author.username} size={38} />
+              <div style={{ fontSize: 15 }}>
+                <div style={{ display: "flex", gap: 6, alignItems: "baseline" }}>
+                  <span className="name">{c.author.username}</span>
+                  <span className="muted" style={{ fontSize: 11 }}>{timeAgo(c.createdAt)}</span>
+                </div>
+                <p style={{ margin: 0 }}>{c.content}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -251,7 +334,7 @@ export default function Home() {
       .then((data) => setCurrentUser(data))
       .catch(console.error);
 
-    fetch(`${API_URL}/posts`, { headers: authHeaders() })
+    fetch(`${API_URL}/posts/feed`, { headers: authHeaders() })
       .then((r) => r.json())
       .then((data) => {
         if (Array.isArray(data)) {
@@ -369,12 +452,12 @@ export default function Home() {
             <div className="profile">
               <Avatar name={currentUser?.username ?? "?"} />
               <div>
-                <div className="profileName">{currentUser?.username ?? "..."}</div>
+                <div className="profileName" style={{ cursor: "pointer" }} onClick={() => currentUser && router.push(`/profile/${currentUser.id}`)}>{currentUser?.username ?? "..."}</div>
                 <div className="muted">@{currentUser?.username ?? "..."}</div>
               </div>
             </div>
             <div className="stats">
-              <div className="stat">
+              <div className="stat statClickable" onClick={() => currentUser && router.push(`/profile/${currentUser.id}`)}>
                 <div className="statNum">{currentUser?.stats?.posts ?? "-"}</div>
                 <div className="muted">{t("home.posts")}</div>
               </div>
@@ -409,7 +492,9 @@ export default function Home() {
         <section className="center">
           <PostComposer onPost={addPost} username={currentUser?.username ?? "You"} />
           <div className="feed">
-            {posts.map((p) => (
+            {posts.length === 0 ? (
+              <p className="muted" style={{ textAlign: "center", marginTop: 32 }}>{t("home.empty_feed")}</p>
+            ) : posts.map((p) => (
               <Card key={p.id}>
                 <Post post={p} onToggleLike={toggleLike} />
               </Card>
