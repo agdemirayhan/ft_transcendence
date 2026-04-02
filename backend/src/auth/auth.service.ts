@@ -95,6 +95,26 @@ export class AuthService {
     });
   }
 
+  async getConversations(userId: number) {
+    const messages = await this.prisma.message.findMany({
+      where: { OR: [{ senderId: userId }, { receiverId: userId }] },
+      select: {
+        senderId: true,
+        receiverId: true,
+        sender: { select: { id: true, username: true } },
+        receiver: { select: { id: true, username: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const seen = new Map<number, { id: number; username: string }>();
+    for (const m of messages) {
+      const other = m.senderId === userId ? m.receiver : m.sender;
+      if (!seen.has(other.id)) seen.set(other.id, other);
+    }
+    return Array.from(seen.values());
+  }
+
   async getMessagesBetweenUsers(userId: number, friendId: number) {
     return this.prisma.message.findMany({
       where: {

@@ -37,6 +37,19 @@
     "no_posts": "Henüz gönderi yok.",
     "edit_soon": "Profil düzenleme yakında eklenecek"
   },
+  "messages": {
+    "title": "Mesajlar",
+    "chats": "Sohbetler",
+    "no_users": "Henüz konuşma yok.",
+    "select": "Bir konuşma seçin",
+    "placeholder": "Mesaj yaz...",
+    "send": "Gönder",
+    "back": "← Geri",
+    "loading": "Yükleniyor...",
+    "online": "çevrimiçi",
+    "new_message": "Yeni",
+    "search_users": "Kullanıcı ara..."
+  },
   "home": {
     "search": "Ara...",
     "search_btn": "Ara",

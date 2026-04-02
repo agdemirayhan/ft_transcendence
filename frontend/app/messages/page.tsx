@@ -5,6 +5,8 @@ import { io, Socket } from 'socket.io-client';
 import Cookies from 'js-cookie';
 import { useRouter } from 'next/navigation';
 import Avatar from '@/components/Avatar';
+import { useTranslation } from 'react-i18next';
+import '../i18n';
 
 interface ChatUser {
   id: number;
@@ -28,11 +30,15 @@ function authHeaders(): HeadersInit {
 
 export default function MessagesPage() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [chatUsers, setChatUsers] = useState<ChatUser[]>([]);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+  const [showNewChat, setShowNewChat] = useState(false);
+  const [allUsers, setAllUsers] = useState<ChatUser[]>([]);
+  const [userSearch, setUserSearch] = useState('');
   const socketRef = useRef<Socket | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -48,9 +54,9 @@ export default function MessagesPage() {
 
   useEffect(() => {
     if (!currentUserId) return;
-    fetch(`${API_URL}/auth/users`, { headers: authHeaders() })
+    fetch(`${API_URL}/auth/conversations`, { headers: authHeaders() })
       .then((r) => r.json())
-      .then((data) => setChatUsers(data.filter((u: ChatUser) => u.id !== currentUserId)));
+      .then((data) => { if (Array.isArray(data)) setChatUsers(data); });
   }, [currentUserId]);
 
   useEffect(() => {
@@ -91,9 +97,37 @@ export default function MessagesPage() {
     setNewMessage('');
   };
 
+  const openNewChat = () => {
+    if (allUsers.length === 0) {
+      Promise.all([
+        fetch(`${API_URL}/users/me/following`, { headers: authHeaders() }).then((r) => r.json()),
+        fetch(`${API_URL}/users/me/followers`, { headers: authHeaders() }).then((r) => r.json()),
+      ]).then(([following, followers]) => {
+        const merged = new Map<number, ChatUser>();
+        [...(Array.isArray(following) ? following : []), ...(Array.isArray(followers) ? followers : [])]
+          .forEach((u: ChatUser) => { if (u.id !== currentUserId) merged.set(u.id, u); });
+        setAllUsers(Array.from(merged.values()));
+      });
+    }
+    setShowNewChat(true);
+    setUserSearch('');
+  };
+
+  const startChat = (user: ChatUser) => {
+    if (!chatUsers.find((u) => u.id === user.id)) {
+      setChatUsers((prev) => [user, ...prev]);
+    }
+    setShowNewChat(false);
+    selectChat(user.id);
+  };
+
   const selectChat = (id: number) => {
     setSelectedId(id);
     setMessages([]);
+    fetch(`${API_URL}/auth/messages/${id}`, { headers: authHeaders() })
+      .then((r) => r.json())
+      .then((data) => { if (Array.isArray(data)) setMessages(data); })
+      .catch(console.error);
   };
 
   const selectedUser = chatUsers.find((u) => u.id === selectedId);
@@ -101,7 +135,7 @@ export default function MessagesPage() {
   if (!currentUserId) {
     return (
       <div className="page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <span className="muted">Loading...</span>
+        <span className="muted">{t('messages.loading')}</span>
       </div>
     );
   }
@@ -110,27 +144,62 @@ export default function MessagesPage() {
     <div className="page">
       {/* Topbar */}
       <header className="topbar">
-        <div className="brand">
-          <img src="/favicon-32x32.png" alt="miniSocial" width={32} height={32} />
-        </div>
-        <span style={{ fontWeight: 800, fontSize: 17 }}>Messages</span>
-        <span className="spacer" />
         <button className="ghostBtn btnSmall" onClick={() => router.push('/home')} type="button">
-          ← Back
+          {t('messages.back')}
         </button>
       </header>
 
       {/* Body */}
-      <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '300px 1fr', gap: 16, padding: '16px 32px', overflow: 'hidden' }}>
+      <div style={{ flex: 1, display: 'flex', justifyContent: 'center', padding: '8px 32px 24px', overflow: 'hidden' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '70%', height: '70vh', minHeight: 0 }}>
+        <div className="profileTabs">
+          <button type="button" className="profileTab active">{t('messages.title')}</button>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '220px 1fr', gap: 12, flex: 1, minHeight: 0 }}>
 
         {/* Sidebar */}
-        <div className="card" style={{ display: 'flex', flexDirection: 'column', padding: 0, overflow: 'hidden' }}>
-          <div className="cardTitle" style={{ padding: '14px 16px', borderBottom: '1px solid var(--border)', marginBottom: 0 }}>
-            Chats
+        <div className="card" style={{ display: 'flex', flexDirection: 'column', padding: 0, minHeight: 0, height: '100%' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderBottom: '1px solid var(--border)' }}>
+            <span className="cardTitle" style={{ margin: 0 }}>{t('messages.chats')}</span>
+            <button className="btn btnSmall" type="button" onClick={openNewChat}>+ {t('messages.new_message')}</button>
           </div>
-          <div style={{ flex: 1, overflowY: 'auto' }}>
+
+          {showNewChat && (
+            <div style={{ borderBottom: '1px solid var(--border)', padding: 8, display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <input
+                className="authInput"
+                style={{ borderRadius: 10, fontSize: 13, padding: '7px 10px' }}
+                placeholder={t('messages.search_users')}
+                value={userSearch}
+                onChange={(e) => setUserSearch(e.target.value)}
+                autoFocus
+              />
+              <div style={{ maxHeight: 180, overflowY: 'auto' }}>
+                {allUsers
+                  .filter((u) => u.username.toLowerCase().includes(userSearch.toLowerCase()))
+                  .map((u) => (
+                    <div
+                      key={u.id}
+                      onClick={() => startChat(u)}
+                      style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 6px', cursor: 'pointer', borderRadius: 8 }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.06)')}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                    >
+                      <Avatar name={u.username} />
+                      <div>
+                        <div style={{ fontWeight: 700, fontSize: 13 }}>{u.username}</div>
+                        <div className="muted">@{u.username}</div>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+              <button className="ghostBtn btnSmall" type="button" onClick={() => setShowNewChat(false)} style={{ marginTop: 2 }}>✕</button>
+            </div>
+          )}
+
+          <div style={{ flex: 1, overflowY: 'auto', paddingRight: 4 }}>
             {chatUsers.length === 0 && (
-              <div className="muted" style={{ padding: 16 }}>No users yet.</div>
+              <div className="muted" style={{ padding: 16 }}>{t('messages.no_users')}</div>
             )}
             {chatUsers.map((user) => (
               <div
@@ -164,7 +233,8 @@ export default function MessagesPage() {
         </div>
 
         {/* Chat area */}
-        <div className="card" style={{ display: 'flex', flexDirection: 'column', padding: 0, overflow: 'hidden' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0, height: '100%' }}>
+          <div className="card" style={{ display: 'flex', flexDirection: 'column', padding: 0, minHeight: 0, flex: 1 }}>
           {selectedUser ? (
             <>
               {/* Chat header */}
@@ -177,13 +247,13 @@ export default function MessagesPage() {
                   <div style={{ fontWeight: 800 }}>{selectedUser.username}</div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                     <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--accent2)', display: 'inline-block' }} />
-                    <span className="muted">online</span>
+                    <span className="muted">{t('messages.online')}</span>
                   </div>
                 </div>
               </div>
 
               {/* Messages */}
-              <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px', paddingRight: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {messages.map((msg) => {
                   const mine = msg.senderId === currentUserId;
                   return (
@@ -219,7 +289,7 @@ export default function MessagesPage() {
                   type="text"
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder="Write a message..."
+                  placeholder={t('messages.placeholder')}
                 />
                 <button
                   className="btn"
@@ -227,15 +297,18 @@ export default function MessagesPage() {
                   disabled={!newMessage.trim()}
                   style={{ padding: '10px 18px' }}
                 >
-                  Send
+                  {t('messages.send')}
                 </button>
               </form>
             </>
           ) : (
             <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <span className="muted">Select a conversation</span>
+              <span className="muted">{t('messages.select')}</span>
             </div>
           )}
+          </div>
+        </div>
+        </div>
         </div>
       </div>
     </div>
