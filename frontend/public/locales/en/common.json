@@ -37,6 +37,19 @@
     "no_posts": "No posts yet.",
     "edit_soon": "Edit profile will be added soon"
   },
+  "messages": {
+    "title": "Messages",
+    "chats": "Chats",
+    "no_users": "No conversations yet.",
+    "select": "Select a conversation",
+    "placeholder": "Write a message...",
+    "send": "Send",
+    "back": "← Back",
+    "loading": "Loading...",
+    "online": "online",
+    "new_message": "New",
+    "search_users": "Search users..."
+  },
   "home": {
     "search": "Search...",
     "search_btn": "Search",

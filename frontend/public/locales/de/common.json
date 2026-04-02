@@ -37,6 +37,19 @@
     "no_posts": "Noch keine Beiträge.",
     "edit_soon": "Profil bearbeiten wird bald hinzugefügt"
   },
+  "messages": {
+    "title": "Nachrichten",
+    "chats": "Chats",
+    "no_users": "Noch keine Unterhaltungen.",
+    "select": "Unterhaltung auswählen",
+    "placeholder": "Nachricht schreiben...",
+    "send": "Senden",
+    "back": "← Zurück",
+    "loading": "Wird geladen...",
+    "online": "online",
+    "new_message": "Neu",
+    "search_users": "Benutzer suchen..."
+  },
   "home": {
     "search": "Suchen...",
     "search_btn": "Suchen",

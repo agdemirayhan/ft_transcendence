@@ -1,11 +1,12 @@
-import { Controller, Post, Body, UseGuards, Request, Get, Delete, Patch } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Request, Get, Param } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LocalAuthGuard } from './local-auth.guard';
 import { JwtAuthGuard } from './jwt/jwt.guard';
+import { UsersService } from '../users/users.service';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(private authService: AuthService, private usersService: UsersService) {}
 
   @Post('signup')
   async signup(@Body() body: { email: string; username: string; password: string }) {
@@ -21,18 +22,25 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Get('me')
   getProfile(@Request() req: any) {
-    return this.authService.getMe(req.user.id);
+    return this.usersService.getProfile(req.user.id);
+  }
+
+  // Neue Endpoints für Chat
+  @UseGuards(JwtAuthGuard)
+  @Get('users')
+  async getAllUsers() {
+    return this.authService.getAllUsers();
   }
 
   @UseGuards(JwtAuthGuard)
-  @Delete('delete-account')
-  async deleteAccount(@Request() req: any) {
-    return this.authService.deleteAccount(req.user.id);
+  @Get('conversations')
+  async getConversations(@Request() req: any) {
+    return this.authService.getConversations(req.user.id);
   }
 
   @UseGuards(JwtAuthGuard)
-  @Patch('language')
-  async updateLanguage(@Request() req: any, @Body() body: { language: string }) {
-    return this.authService.updateLanguage(req.user.id, body.language);
+  @Get('messages/:friendId')
+  async getMessages(@Request() req: any, @Param('friendId') friendId: string) {
+    return this.authService.getMessagesBetweenUsers(req.user.id, +friendId);
   }
 }
