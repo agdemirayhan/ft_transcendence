@@ -2,10 +2,11 @@ import { Controller, Post, Body, UseGuards, Request, Get, Param } from '@nestjs/
 import { AuthService } from './auth.service';
 import { LocalAuthGuard } from './local-auth.guard';
 import { JwtAuthGuard } from './jwt/jwt.guard';
+import { UsersService } from '../users/users.service';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(private authService: AuthService, private usersService: UsersService) {}
 
   @Post('signup')
   async signup(@Body() body: { email: string; username: string; password: string }) {
@@ -21,7 +22,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Get('me')
   getProfile(@Request() req: any) {
-    return req.user;
+    return this.usersService.getProfile(req.user.id);
   }
 
   // Neue Endpoints für Chat

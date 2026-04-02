@@ -3,100 +3,91 @@
 import { useState, useEffect, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 import Cookies from 'js-cookie';
+import { useRouter } from 'next/navigation';
+import Avatar from '@/components/Avatar';
 
 interface ChatUser {
   id: number;
   username: string;
 }
 
+interface Message {
+  id: number;
+  content: string;
+  senderId: number;
+  receiverId: number;
+  createdAt: string;
+}
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
+
+function authHeaders(): HeadersInit {
+  const token = Cookies.get('token');
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 export default function MessagesPage() {
+  const router = useRouter();
   const [chatUsers, setChatUsers] = useState<ChatUser[]>([]);
   const [selectedId, setSelectedId] = useState<number | null>(null);
-  const [messages, setMessages] = useState<any[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const socketRef = useRef<Socket | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const API_URL = 'http://localhost:3000';
-
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  // Eigene User-ID holen
   useEffect(() => {
-    const token = Cookies.get('token');
-    if (!token) return;
-
-    fetch(`${API_URL}/auth/me`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then(res => res.json())
-      .then(data => setCurrentUserId(data.id));
+    fetch(`${API_URL}/auth/me`, { headers: authHeaders() })
+      .then((r) => r.json())
+      .then((data) => setCurrentUserId(data.id));
   }, []);
 
-  // Alle anderen User für die Sidebar holen
   useEffect(() => {
-    const token = Cookies.get('token');
-    if (!token) return;
-
-    fetch(`${API_URL}/auth/users`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then(res => res.json())
-      .then(data => setChatUsers(data.filter((u: any) => u.id !== currentUserId)));
+    if (!currentUserId) return;
+    fetch(`${API_URL}/auth/users`, { headers: authHeaders() })
+      .then((r) => r.json())
+      .then((data) => setChatUsers(data.filter((u: ChatUser) => u.id !== currentUserId)));
   }, [currentUserId]);
 
-  // WebSocket für den aktuellen Chat
   useEffect(() => {
-    if (!currentUserId || !selectedId) return () => {};
-
+    if (!currentUserId || !selectedId) return;
     const token = Cookies.get('token');
-    const newSocket = io(API_URL, { auth: { token } });
-    socketRef.current = newSocket;
+    const socket = io(API_URL, { auth: { token } });
+    socketRef.current = socket;
 
-    newSocket.on('connect', () => console.log('✅ Socket verbunden'));
-
-    newSocket.on('newMessage', (msg: any) => {
+    socket.on('newMessage', (msg: Message) => {
       if (msg.senderId === selectedId || msg.receiverId === selectedId) {
-        setMessages((prev) => {
-          if (prev.some((m) => m.id === msg.id)) return prev;
-          return [...prev, msg];
-        });
+        setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]));
         scrollToBottom();
       }
     });
 
-    newSocket.on('messageSent', (msg: any) => {
-      setMessages((prev) => {
-        const filtered = prev.filter((m) => m.id !== msg.id);
-        return [...filtered, msg];
-      });
+    socket.on('messageSent', (msg: Message) => {
+      setMessages((prev) => [...prev.filter((m) => m.id !== msg.id), msg]);
       scrollToBottom();
     });
 
-    return () => newSocket.disconnect();
+    return () => { socket.disconnect(); };
   }, [currentUserId, selectedId]);
 
-  const sendMessage = async (e: React.FormEvent) => {
+  const sendMessage = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMessage.trim() || !socketRef.current || !currentUserId || !selectedId) return;
 
-    const messageData = { receiverId: selectedId, content: newMessage };
-
-    const optimisticMsg = {
+    const optimistic: Message = {
       id: Date.now(),
       content: newMessage,
       senderId: currentUserId,
       receiverId: selectedId,
       createdAt: new Date().toISOString(),
     };
-
-    setMessages((prev) => [...prev, optimisticMsg]);
+    setMessages((prev) => [...prev, optimistic]);
     scrollToBottom();
-
-    socketRef.current.emit('sendMessage', messageData);
+    socketRef.current.emit('sendMessage', { receiverId: selectedId, content: newMessage });
     setNewMessage('');
   };
 
@@ -105,97 +96,147 @@ export default function MessagesPage() {
     setMessages([]);
   };
 
-  if (!currentUserId) return <div className="flex items-center justify-center h-screen text-white">Lade Chats...</div>;
+  const selectedUser = chatUsers.find((u) => u.id === selectedId);
+
+  if (!currentUserId) {
+    return (
+      <div className="page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <span className="muted">Loading...</span>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex h-screen bg-[#0b1220] text-white">
-      {/* Sidebar – Chat Liste */}
-      <div className="w-80 border-r border-white/10 flex flex-col">
-        <div className="p-4 border-b border-white/10 font-bold text-lg">Chats</div>
-        <div className="flex-1 overflow-y-auto">
-          {chatUsers.map((user) => (
-            <div
-              key={user.id}
-              onClick={() => selectChat(user.id)}
-              className={`p-4 flex items-center gap-3 cursor-pointer hover:bg-white/10 transition-colors ${
-                selectedId === user.id ? 'bg-white/10' : ''
-              }`}
-            >
-              <div className="w-10 h-10 rounded-2xl overflow-hidden border border-white/30">
-                <img src="https://i.pravatar.cc/128" alt={user.username} className="w-full h-full object-cover" />
-              </div>
-              <div className="font-medium">{user.username}</div>
-            </div>
-          ))}
+    <div className="page">
+      {/* Topbar */}
+      <header className="topbar">
+        <div className="brand">
+          <img src="/favicon-32x32.png" alt="miniSocial" width={32} height={32} />
         </div>
-      </div>
+        <span style={{ fontWeight: 800, fontSize: 17 }}>Messages</span>
+        <span className="spacer" />
+        <button className="ghostBtn btnSmall" onClick={() => router.push('/home')} type="button">
+          ← Back
+        </button>
+      </header>
 
-      {/* Haupt-Chat */}
-      <div className="flex-1 flex flex-col">
-        {selectedId ? (
-          <>
-            {/* Header */}
-            <div className="p-4 border-b border-white/10 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl overflow-hidden border border-white/30 flex-shrink-0">
-                <img src="https://i.pravatar.cc/128" alt="Partner" className="w-full h-full object-cover" />
-              </div>
-              <div>
-                <h1 className="font-bold text-xl">
-                  {chatUsers.find(u => u.id === selectedId)?.username || 'Chat-Partner'}
-                </h1>
-                <p className="text-emerald-400 text-xs flex items-center gap-1">
-                  <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></span> online
-                </p>
-              </div>
-            </div>
+      {/* Body */}
+      <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '300px 1fr', gap: 16, padding: '16px 32px', overflow: 'hidden' }}>
 
-            {/* Messages */}
-            <div className="flex-1 p-6 overflow-y-auto flex flex-col gap-4 bg-[#0b1220]">
-              {messages.map((msg) => (
-                <div
-                  key={msg.id}
-                  className={`flex ${msg.senderId === currentUserId ? 'justify-end' : 'justify-start'}`}
-                >
-                  <div
-                    className={`max-w-[75%] px-5 py-3 rounded-3xl text-base leading-relaxed
-                      ${msg.senderId === currentUserId
-                        ? 'bg-[#7c5cff] rounded-tr-none'
-                        : 'bg-white/10 rounded-tl-none'}`}
-                  >
-                    {msg.content}
-                    <div className="text-[10px] opacity-60 mt-1 text-right">
-                      {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </div>
+        {/* Sidebar */}
+        <div className="card" style={{ display: 'flex', flexDirection: 'column', padding: 0, overflow: 'hidden' }}>
+          <div className="cardTitle" style={{ padding: '14px 16px', borderBottom: '1px solid var(--border)', marginBottom: 0 }}>
+            Chats
+          </div>
+          <div style={{ flex: 1, overflowY: 'auto' }}>
+            {chatUsers.length === 0 && (
+              <div className="muted" style={{ padding: 16 }}>No users yet.</div>
+            )}
+            {chatUsers.map((user) => (
+              <div
+                key={user.id}
+                onClick={() => selectChat(user.id)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  padding: '12px 16px',
+                  cursor: 'pointer',
+                  background: selectedId === user.id ? 'rgba(124,92,255,0.12)' : 'transparent',
+                  borderLeft: selectedId === user.id ? '3px solid var(--accent)' : '3px solid transparent',
+                  transition: 'background 0.15s',
+                }}
+                onMouseEnter={(e) => {
+                  if (selectedId !== user.id) (e.currentTarget as HTMLDivElement).style.background = 'rgba(255,255,255,0.05)';
+                }}
+                onMouseLeave={(e) => {
+                  if (selectedId !== user.id) (e.currentTarget as HTMLDivElement).style.background = 'transparent';
+                }}
+              >
+                <Avatar name={user.username} />
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 14 }}>{user.username}</div>
+                  <div className="muted">@{user.username}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Chat area */}
+        <div className="card" style={{ display: 'flex', flexDirection: 'column', padding: 0, overflow: 'hidden' }}>
+          {selectedUser ? (
+            <>
+              {/* Chat header */}
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 12,
+                padding: '12px 16px', borderBottom: '1px solid var(--border)',
+              }}>
+                <Avatar name={selectedUser.username} />
+                <div>
+                  <div style={{ fontWeight: 800 }}>{selectedUser.username}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--accent2)', display: 'inline-block' }} />
+                    <span className="muted">online</span>
                   </div>
                 </div>
-              ))}
-              <div ref={messagesEndRef} />
-            </div>
+              </div>
 
-            {/* Input */}
-            <form onSubmit={sendMessage} className="p-4 bg-[#0b1220] border-t border-white/10">
-              <div className="flex gap-3 max-w-3xl mx-auto">
+              {/* Messages */}
+              <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {messages.map((msg) => {
+                  const mine = msg.senderId === currentUserId;
+                  return (
+                    <div key={msg.id} style={{ display: 'flex', justifyContent: mine ? 'flex-end' : 'flex-start' }}>
+                      <div style={{
+                        maxWidth: '70%',
+                        padding: '10px 14px',
+                        borderRadius: mine ? '16px 4px 16px 16px' : '4px 16px 16px 16px',
+                        background: mine ? 'linear-gradient(180deg, rgba(124,92,255,0.95), rgba(124,92,255,0.7))' : 'rgba(255,255,255,0.08)',
+                        border: '1px solid ' + (mine ? 'rgba(124,92,255,0.4)' : 'var(--border)'),
+                        fontSize: 14,
+                        lineHeight: 1.5,
+                      }}>
+                        {msg.content}
+                        <div style={{ fontSize: 10, opacity: 0.55, marginTop: 4, textAlign: 'right' }}>
+                          {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+                <div ref={messagesEndRef} />
+              </div>
+
+              {/* Input */}
+              <form onSubmit={sendMessage} style={{
+                padding: '12px 16px', borderTop: '1px solid var(--border)',
+                display: 'flex', gap: 10,
+              }}>
                 <input
+                  className="authInput"
+                  style={{ flex: 1, borderRadius: 12 }}
                   type="text"
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder="Nachricht schreiben..."
-                  className="flex-1 bg-white/10 border border-white/20 focus:border-[#7c5cff] rounded-3xl px-6 py-3 outline-none text-white placeholder:text-white/50"
+                  placeholder="Write a message..."
                 />
                 <button
+                  className="btn"
                   type="submit"
-                  className="w-12 h-12 bg-[#7c5cff] hover:bg-[#6a4fff] rounded-3xl flex items-center justify-center transition-colors"
+                  disabled={!newMessage.trim()}
+                  style={{ padding: '10px 18px' }}
                 >
-                  ➤
+                  Send
                 </button>
-              </div>
-            </form>
-          </>
-        ) : (
-          <div className="flex-1 flex items-center justify-center text-white/50 text-lg">
-            Wähle links einen Chat aus
-          </div>
-        )}
+              </form>
+            </>
+          ) : (
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span className="muted">Select a conversation</span>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
