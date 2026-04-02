@@ -88,4 +88,23 @@ export class AuthService {
     await this.prisma.user.delete({ where: { id: userId } });
     return { message: "Account deleted." };
   }
+
+    async getAllUsers() {
+    return this.prisma.user.findMany({
+      select: { id: true, username: true, avatarUrl: true, onlineStatus: true },
+    });
+  }
+
+  async getMessagesBetweenUsers(userId: number, friendId: number) {
+    return this.prisma.message.findMany({
+      where: {
+        OR: [
+          { senderId: userId, receiverId: friendId },
+          { senderId: friendId, receiverId: userId },
+        ],
+      },
+      orderBy: { createdAt: 'asc' },
+      include: { sender: true },
+    });
+  }
 }
