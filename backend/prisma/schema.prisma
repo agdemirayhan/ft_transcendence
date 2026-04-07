@@ -27,6 +27,7 @@ model User {
   comments            Comment[]
   followers           Follow[]  @relation("followers")
   following           Follow[]  @relation("following")
+  files               File[]
 
   @@map("users")
 }
@@ -38,10 +39,25 @@ model Post {
   author    User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
   likes     Like[]
   comments  Comment[]
+  files     File[]
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
   @@map("posts")
+}
+
+model File {
+  id        Int       @id @default(autoincrement())
+  filename  String
+  mimetype  String
+  size      Int
+  authorId  Int
+  postId    Int?
+  author    User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  post      Post?     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  createdAt DateTime  @default(now())
+
+  @@map("files")
 }
 
 model Follow {

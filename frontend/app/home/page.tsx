@@ -11,34 +11,21 @@ import Cookies from "js-cookie";
 
 type PostType = {
   id: number;
-  author: string;
-  handle: string;
-  time: string;
+  author: {
+    id: number;
+    username: string;
+    avatarUrl: string;
+  };
   content: string;
+  files: Array<{
+    id: number;
+    filename: string;
+    url: string;
+  }>;
   likes: number;
   liked: boolean;
+  createdAt: string;
 };
-
-const seedPosts: PostType[] = [
-  {
-    id: 1,
-    author: "Ayhan",
-    handle: "@ayhan",
-    time: "2s ago",
-    content: "First post! 🎉 I'm building a simple social media page.",
-    likes: 3,
-    liked: false,
-  },
-  {
-    id: 2,
-    author: "Taha",
-    handle: "@tkirmizi",
-    time: "5m ago",
-    content: "Building small UIs with React is really enjoyable.",
-    likes: 7,
-    liked: true,
-  },
-];
 
 function Card({ title, children }: { title?: string; children: React.ReactNode }) {
   return (
@@ -49,17 +36,19 @@ function Card({ title, children }: { title?: string; children: React.ReactNode }
   );
 }
 
-function PostComposer({ onPost }: { onPost: (content: string) => void }) {
+function PostComposer({ onPost }: { onPost: (content: string, file?: File) => void }) {
   const [text, setText] = useState("");
-  const [attachmentName, setAttachmentName] = useState("");
+  const [attachment, setAttachment] = useState<File | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const { t } = useTranslation();
 
   function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const trimmed = text.trim();
     if (!trimmed) return;
-    onPost(trimmed);
+    onPost(trimmed, attachment || undefined);
     setText("");
+    setAttachment(null);
   }
 
   return (
@@ -74,6 +63,7 @@ function PostComposer({ onPost }: { onPost: (content: string) => void }) {
             placeholder={t("home.whats_happening")}
             rows={3}
             maxLength={240}
+            disabled={isLoading}
           />
         </div>
         <div className="composerBottom">
@@ -82,8 +72,9 @@ function PostComposer({ onPost }: { onPost: (content: string) => void }) {
               id="post-attachment"
               type="file"
               hidden
+              accept="image/png,image/jpeg"
               onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                setAttachmentName(e.target.files?.[0]?.name ?? "")
+                setAttachment(e.target.files?.[0] || null)
               }
             />
             <button
@@ -92,14 +83,15 @@ function PostComposer({ onPost }: { onPost: (content: string) => void }) {
               aria-label="Attach file"
               title="Attach file"
               onClick={() => document.getElementById("post-attachment")?.click()}
+              disabled={isLoading}
             >
               <PaperClipIcon className="attachIcon" />
             </button>
             <span className="muted">{text.length}/240</span>
-            {attachmentName ? <span className="muted">• {attachmentName}</span> : null}
+            {attachment ? <span className="muted">• {attachment.name}</span> : null}
           </div>
-          <button className="btn" type="submit">
-            {t("home.search_btn") === "Search" ? "Post" : t("home.search_btn")}
+          <button className="btn" type="submit" disabled={isLoading}>
+            {isLoading ? "Posting..." : (t("home.search_btn") === "Search" ? "Post" : t("home.search_btn"))}
           </button>
         </div>
       </form>
@@ -115,20 +107,38 @@ function Post({
   onToggleLike: (id: number) => void;
 }) {
   const { t } = useTranslation();
+  const timeAgo = new Date(post.createdAt).toLocaleString();
 
   return (
     <div className="post">
-      <Avatar name={post.author} />
+      <Avatar name={post.author.username} />
       <div className="postBody">
         <div className="postHeader">
           <div className="postAuthor">
-            <span className="name">{post.author}</span>
-            <span className="handle">{post.handle}</span>
+            <span className="name">{post.author.username}</span>
+            <span className="handle">@{post.author.username.toLowerCase()}</span>
             <span className="dot">•</span>
-            <span className="time">{post.time}</span>
+            <span className="time">{timeAgo}</span>
           </div>
         </div>
         <div className="postContent">{post.content}</div>
+        {post.files && post.files.length > 0 && (
+          <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {post.files.map((file) => (
+              <img
+                key={file.id}
+                src={file.url}
+                alt={file.filename}
+                style={{
+                  maxWidth: '100%',
+                  height: 'auto',
+                  borderRadius: '12px',
+                  marginTop: '8px',
+                }}
+              />
+            ))}
+          </div>
+        )}
         <div className="postActions">
           <button
             className={`iconBtn ${post.liked ? "liked" : ""}`}
@@ -193,21 +203,80 @@ function LogoutModal({ onConfirm, onCancel }: { onConfirm: () => void; onCancel:
 export default function Home() {
   const router = useRouter();
   const { t } = useTranslation();
-  const [posts, setPosts] = useState<PostType[]>(seedPosts);
+  const [posts, setPosts] = useState<PostType[]>([]);
   const [showLogout, setShowLogout] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
+  const [isLoadingPosts, setIsLoadingPosts] = useState(true);
 
-  function addPost(content: string) {
-    const newPost: PostType = {
-      id: Date.now(),
-      author: "You",
-      handle: "@you",
-      time: t("home.just_now"),
-      content,
-      likes: 0,
-      liked: false,
-    };
-    setPosts((p) => [newPost, ...p]);
+  async function fetchPosts() {
+    try {
+      const response = await fetch("http://localhost:3000/posts");
+      if (!response.ok) throw new Error("Failed to fetch posts");
+      const data = await response.json();
+      setPosts(data);
+    } catch (error) {
+      console.error("Error fetching posts:", error);
+    } finally {
+      setIsLoadingPosts(false);
+    }
+  }
+
+  async function addPost(content: string, file?: File) {
+    const token = Cookies.get("token");
+    if (!token) {
+      alert("Not authenticated");
+      return;
+    }
+
+    try {
+      let fileId: number | undefined;
+
+      // Upload file if provided
+      if (file) {
+        const formData = new FormData();
+        formData.append("file", file);
+
+        const uploadResponse = await fetch("http://localhost:3000/upload", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          body: formData,
+        });
+
+        if (!uploadResponse.ok) {
+          const error = await uploadResponse.json();
+          throw new Error(error.message || "Failed to upload file");
+        }
+
+        const uploadedFile = await uploadResponse.json();
+        fileId = uploadedFile.id;
+      }
+
+      // Create post
+      const postResponse = await fetch("http://localhost:3000/posts", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          content,
+          fileId,
+        }),
+      });
+
+      if (!postResponse.ok) {
+        const error = await postResponse.json();
+        throw new Error(error.message || "Failed to create post");
+      }
+
+      const newPost = await postResponse.json();
+      setPosts((p) => [newPost, ...p]);
+    } catch (error) {
+      console.error("Error creating post:", error);
+      alert(`Failed to create post: ${error instanceof Error ? error.message : "Unknown error"}`);
+    }
   }
 
   function toggleLike(id: number) {
@@ -226,6 +295,7 @@ export default function Home() {
       router.push("/");
     } else {
       setAuthChecked(true);
+      fetchPosts();
     }
   }, []);
 
@@ -293,11 +363,25 @@ export default function Home() {
         <section className="center">
           <PostComposer onPost={addPost} />
           <div className="feed">
-            {posts.map((p) => (
-              <Card key={p.id}>
-                <Post post={p} onToggleLike={toggleLike} />
+            {isLoadingPosts ? (
+              <Card>
+                <div style={{ padding: "20px", textAlign: "center", color: "var(--muted)" }}>
+                  Loading posts...
+                </div>
               </Card>
-            ))}
+            ) : posts.length === 0 ? (
+              <Card>
+                <div style={{ padding: "20px", textAlign: "center", color: "var(--muted)" }}>
+                  No posts yet. Be the first to post!
+                </div>
+              </Card>
+            ) : (
+              posts.map((p) => (
+                <Card key={p.id}>
+                  <Post post={p} onToggleLike={toggleLike} />
+                </Card>
+              ))
+            )}
           </div>
         </section>
 
