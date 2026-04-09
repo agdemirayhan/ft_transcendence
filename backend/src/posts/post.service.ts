@@ -38,7 +38,28 @@ export class PostService {
       });
     }
 
-    return this.formatPost(post);
+    const postWithRelations = await this.prisma.post.findUnique({
+      where: { id: post.id },
+      include: {
+        author: {
+          select: {
+            id: true,
+            username: true,
+            email: true,
+            avatarUrl: true,
+          },
+        },
+        files: true,
+        likes: true,
+        comments: true,
+      },
+    });
+
+    if (!postWithRelations) {
+      throw new NotFoundException('Post not found');
+    }
+
+    return this.formatPost(postWithRelations);
   }
 
   async getPosts(limit: number = 20, offset: number = 0) {
@@ -118,7 +139,7 @@ export class PostService {
         id: f.id,
         filename: f.filename,
         mimetype: f.mimetype,
-        url: `/uploads/${f.id}`,
+        url: `/upload/${f.id}`,
       })),
       likes: post.likes.length,
       comments: post.comments.length,

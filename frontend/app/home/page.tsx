@@ -9,6 +9,8 @@ import { useTranslation } from "react-i18next";
 import "../i18n";
 import Cookies from "js-cookie";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
+
 type PostType = {
   id: number;
   author: {
@@ -124,19 +126,22 @@ function Post({
         <div className="postContent">{post.content}</div>
         {post.files && post.files.length > 0 && (
           <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {post.files.map((file) => (
-              <img
-                key={file.id}
-                src={file.url}
-                alt={file.filename}
-                style={{
-                  maxWidth: '100%',
-                  height: 'auto',
-                  borderRadius: '12px',
-                  marginTop: '8px',
-                }}
-              />
-            ))}
+            {post.files.map((file) => {
+              const imageSrc = file.url.startsWith("http") ? file.url : `${API_URL}${file.url}`;
+              return (
+                <img
+                  key={file.id}
+                  src={imageSrc}
+                  alt={file.filename}
+                  style={{
+                    maxWidth: '100%',
+                    height: 'auto',
+                    borderRadius: '12px',
+                    marginTop: '8px',
+                  }}
+                />
+              );
+            })}
           </div>
         )}
         <div className="postActions">
@@ -210,7 +215,7 @@ export default function Home() {
 
   async function fetchPosts() {
     try {
-      const response = await fetch("http://localhost:3000/posts");
+      const response = await fetch(`${API_URL}/posts`);
       if (!response.ok) throw new Error("Failed to fetch posts");
       const data = await response.json();
       setPosts(data);
@@ -236,7 +241,7 @@ export default function Home() {
         const formData = new FormData();
         formData.append("file", file);
 
-        const uploadResponse = await fetch("http://localhost:3000/upload", {
+        const uploadResponse = await fetch(`${API_URL}/upload`, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${token}`,
@@ -254,7 +259,7 @@ export default function Home() {
       }
 
       // Create post
-      const postResponse = await fetch("http://localhost:3000/posts", {
+      const postResponse = await fetch(`${API_URL}/posts`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

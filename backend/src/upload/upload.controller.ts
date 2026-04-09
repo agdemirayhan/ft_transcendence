@@ -73,8 +73,13 @@ export class UploadController {
     @Res() res: Response,
   ) {
     const fileData = await this.uploadService.getFile(fileId);
-    res.type(fileData.mimetype);
-    res.download(fileData.path, fileData.filename);
+    res.set({
+      'Content-Type': fileData.mimetype,
+      'Content-Disposition': `inline; filename="${fileData.filename}"`,
+    });
+    res.send(fileData.data)
+    //res.type(fileData.mimetype);
+    //res.download(fileData.path, fileData.filename);
   }
 
   @Delete(':fileId')

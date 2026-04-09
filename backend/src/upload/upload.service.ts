@@ -42,11 +42,13 @@ export class UploadService {
 
     try {
       // Save file record to database
+      const fileBuffer = fs.readFileSync(file.path);
       const fileRecord = await this.prisma.file.create({
         data: {
           filename: file.filename,
           mimetype: file.mimetype,
           size: file.size,
+          data:fileBuffer,
           authorId: userId,
           postId: postId || null,
         },
@@ -57,7 +59,7 @@ export class UploadService {
         filename: fileRecord.filename,
         mimetype: fileRecord.mimetype,
         size: fileRecord.size,
-        url: `/uploads/${fileRecord.id}`,
+        url: `/upload/${fileRecord.id}`,
         createdAt: fileRecord.createdAt,
       };
     } catch (error) {
@@ -75,14 +77,8 @@ export class UploadService {
       throw new BadRequestException('File not found');
     }
 
-    const filePath = path.join(this.uploadDir, file.filename);
-    
-    if (!fs.existsSync(filePath)) {
-      throw new BadRequestException('File not found on disk');
-    }
-
     return {
-      path: filePath,
+      data: file.data,
       mimetype: file.mimetype,
       filename: file.filename,
     };

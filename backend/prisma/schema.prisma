@@ -51,6 +51,7 @@ model File {
   filename  String
   mimetype  String
   size      Int
+  data      Bytes     @default("")
   authorId  Int
   postId    Int?
   author    User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
