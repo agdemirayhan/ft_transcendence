@@ -37,6 +37,19 @@
     "no_posts": "No posts yet.",
     "edit_soon": "Edit profile will be added soon"
   },
+  "messages": {
+    "title": "Messages",
+    "chats": "Chats",
+    "no_users": "No conversations yet.",
+    "select": "Select a conversation",
+    "placeholder": "Write a message...",
+    "send": "Send",
+    "back": "← Back",
+    "loading": "Loading...",
+    "online": "online",
+    "new_message": "New",
+    "search_users": "Search users..."
+  },
   "home": {
     "search": "Search...",
     "search_btn": "Search",
@@ -47,6 +60,10 @@
     "edit_profile": "Edit Profile",
     "shortcuts": "Shortcuts",
     "feed": "Feed",
+    "empty_feed": "No posts from people you follow yet.",
+    "comments": "Comments",
+    "write_comment": "Write a comment...",
+    "send": "Send",
     "explore": "Explore",
     "messages": "Messages",
     "settings": "Settings",

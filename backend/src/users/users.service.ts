@@ -83,6 +83,34 @@ export class UsersService {
     }));
   }
 
+  async getFollowers(userId: number) {
+    const follows = await this.prisma.follow.findMany({
+      where: { followingId: userId },
+      select: {
+        follower: { select: { id: true, username: true, _count: { select: { followers: true } } } },
+      },
+    });
+    return follows.map((f) => ({
+      id: f.follower.id,
+      username: f.follower.username,
+      followers: f.follower._count.followers,
+    }));
+  }
+
+  async getFollowing(userId: number) {
+    const follows = await this.prisma.follow.findMany({
+      where: { followerId: userId },
+      select: {
+        following: { select: { id: true, username: true, _count: { select: { followers: true } } } },
+      },
+    });
+    return follows.map((f) => ({
+      id: f.following.id,
+      username: f.following.username,
+      followers: f.following._count.followers,
+    }));
+  }
+
   async getFollowStatus(followerId: number, followingId: number) {
     const follow = await this.prisma.follow.findUnique({
       where: { followerId_followingId: { followerId, followingId } },

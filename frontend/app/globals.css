@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
   --bg: #0b1220;
   --panel: rgba(255, 255, 255, 0.06);
@@ -17,8 +21,8 @@
 
 
 /* .noselect {
-  -webkit-user-select: none; 
-  user-select: none; 
+  -webkit-user-select: none;
+  user-select: none;
 } */
 
 
@@ -62,9 +66,9 @@ body {
               var(--bg);
   color: var(--text);
 
-  
+
   display: flex;
-  justify-content: center;   
+  justify-content: center;
 }
 
 .page {
@@ -108,8 +112,8 @@ body {
   padding: 10px 12px;
   outline: none;
 }
-.search::placeholder { 
-  color: var(--muted); 
+.search::placeholder {
+  color: var(--muted);
 }
 
 
@@ -133,7 +137,7 @@ body {
 
 .left, .right {
   position: sticky;
-  top: 0;
+  top: 0px;
   display: grid;
   gap: 8px;
 }
@@ -171,35 +175,57 @@ body {
 .modalOverlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.45);
-  display: flex;
-  align-items: center;
-  justify-content: center;
   z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.75);
 }
 
 .modal {
-  background: var(--panel);
-  border-radius: 12px;
-  padding: 1.5rem 2rem;
-  min-width: 300px;
+  width: 100%;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 12px;
 }
 
-.modalTitle {
-  font-size: 18px;
-  font-weight: 500;
-  margin: 0;
+.modal h2,
+.modal p { margin: 0; }
+
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.modalList {
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: min(510px, 55vh);
+}
+
+.modalListItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
 }
 
 .modalActions {
   display: flex;
   justify-content: flex-end;
-  gap: 0.75rem;
-  margin-top: 0.5rem;
+  gap: 10px;
 }
+
+.statClickable { cursor: pointer; }
 
 .btnDanger {
   background: #e24b4a;
@@ -362,12 +388,45 @@ button:active {
 .postHeader { display: flex; justify-content: space-between; align-items: center; }
 .postAuthor { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
 .name { font-weight: 900; }
+.postAuthor .name { cursor: pointer; }
 .handle, .time { color: var(--muted); font-size: 13px; }
 .dot { color: var(--muted); }
 
 .postContent { line-height: 1.45; }
 .postActions { display: flex; gap: 8px; align-items: center; margin-top: 4px; }
 .spacer { flex: 1; }
+
+.commentCount {
+  color: var(--muted);
+  font-size: 13px;
+  cursor: pointer;
+  margin-left: 10px;
+}
+.commentCount:hover { text-decoration: underline; }
+.commentCount.muted {
+  cursor: default;
+}
+.commentCount.muted:hover { text-decoration: none; }
+
+.commentsList {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 20px;
+  padding-top: 16px;
+  padding-left: 22px;
+  border-top: 1px solid var(--border);
+}
+
+.commentItem {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.commentItem span {
+  display: inline;
+  margin-right: 6px;
+}
 
 .chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .chip {
@@ -388,8 +447,10 @@ button:active {
   border-radius: 14px;
   border: 1px solid var(--border);
   background: rgba(255,255,255,0.04);
+  transition: opacity 0.4s ease, transform 0.4s ease;
 }
 .row { display: flex; gap: 10px; align-items: center; }
+.suggestions .row { cursor: pointer; }
 
 /* PROFILE PAGE */
 
@@ -487,7 +548,7 @@ button:active {
   text-align: center;
   border-top: 1px solid var(--border);
   background: rgba(255,255,255,0.02);
-} 
+}
 
 
 /* LOGIN/SIGNUP PAGE */

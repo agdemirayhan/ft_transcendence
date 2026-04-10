@@ -21,6 +21,12 @@ export class PostsController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Get('feed')
+  async feed(@Request() req: JwtRequest) {
+    return this.postsService.feed(req.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Post()
   async create(@Request() req: JwtRequest, @Body() body: CreatePostDto) {
     return this.postsService.create(req.user.id, body.content);

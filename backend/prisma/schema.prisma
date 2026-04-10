@@ -8,25 +8,28 @@ datasource db {
 }
 
 model User {
-  id                  Int       @id @default(autoincrement())
-  email               String    @unique
-  username            String    @unique
+  id                  Int      @id @default(autoincrement())
+  email               String   @unique
+  username            String   @unique
   passwordHash        String
-  twoFactorEnabled    Boolean   @default(false)
+  twoFactorEnabled    Boolean  @default(false)
   twoFactorSecret     String?
   twoFactorTempSecret String?
-  avatarUrl           String?   @default("https://via.placeholder.com/150")
+  avatarUrl           String?  @default("https://via.placeholder.com/150")
   bio                 String?
-  onlineStatus        Boolean   @default(false)
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
-  language            String    @default("en")
+  onlineStatus        Boolean  @default(false)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  language            String   @default("en")
 
-  posts               Post[]
-  likes               Like[]
-  comments            Comment[]
-  followers           Follow[]  @relation("followers")
-  following           Follow[]  @relation("following")
+  posts     Post[]
+  likes     Like[]
+  comments  Comment[]
+  followers Follow[]  @relation("followers")
+  following Follow[]  @relation("following")
+
+  sentMessages     Message[] @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
 
   @@map("users")
 }
@@ -49,8 +52,8 @@ model Follow {
   followingId Int
   createdAt   DateTime @default(now())
 
-  follower    User @relation("following", fields: [followerId],  references: [id], onDelete: Cascade)
-  following   User @relation("followers", fields: [followingId], references: [id], onDelete: Cascade)
+  follower  User @relation("following", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("followers", fields: [followingId], references: [id], onDelete: Cascade)
 
   @@id([followerId, followingId])
   @@map("follows")
@@ -76,7 +79,20 @@ model Comment {
   createdAt DateTime @default(now())
 
   author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  post   Post @relation(fields: [postId],   references: [id], onDelete: Cascade)
+  post   Post @relation(fields: [postId], references: [id], onDelete: Cascade)
 
   @@map("comments")
+}
+
+model Message {
+  id         Int      @id @default(autoincrement())
+  content    String
+  senderId   Int
+  receiverId Int
+  createdAt  DateTime @default(now())
+
+  sender   User @relation("SentMessages", fields: [senderId], references: [id])
+  receiver User @relation("ReceivedMessages", fields: [receiverId], references: [id])
+
+  @@map("messages")
 }
