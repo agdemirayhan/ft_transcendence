@@ -320,6 +320,7 @@ export default function Home() {
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [fadingIds, setFadingIds] = useState<Set<number>>(new Set());
   const [showFollowing, setShowFollowing] = useState<"following" | "followers" | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     const token = Cookies.get("token");
@@ -434,8 +435,18 @@ export default function Home() {
         <div className="brand">
           <img src="/favicon-32x32.png" alt="miniSocial" width={32} height={32} />
         </div>
-        <input className="search" placeholder={t("home.search")} />
-        <button className="btn btnSmall" onClick={() => alert("Search later 🙂")} type="button">
+        <input
+          className="search"
+          placeholder={t("home.search")}
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter" && searchQuery.trim()) router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`); }}
+        />
+        <button
+          className="btn btnSmall"
+          onClick={() => { if (searchQuery.trim()) router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`); }}
+          type="button"
+        >
           {t("home.search_btn")}
         </button>
         <span className="spacer" />

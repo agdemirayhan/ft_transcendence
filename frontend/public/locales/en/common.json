@@ -74,5 +74,10 @@
     "comment": "Comment",
     "share": "Share",
     "just_now": "just now"
+  },
+  "search": {
+    "back": "← Back",
+    "loading": "Searching...",
+    "no_results": "No users found for \"{{query}}\""
   }
 }

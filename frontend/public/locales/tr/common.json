@@ -74,5 +74,10 @@
     "comment": "Yorum",
     "share": "Paylaş",
     "just_now": "şimdi"
+  },
+  "search": {
+    "back": "← Geri",
+    "loading": "Aranıyor...",
+    "no_results": "\"{{query}}\" için kullanıcı bulunamadı"
   }
 }
