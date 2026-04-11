@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import Cookies from "js-cookie";
 import Avatar from "@/components/Avatar";
+import Topbar from "@/components/Topbar";
 import "../i18n";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
@@ -80,34 +81,9 @@ export default function SearchPage() {
     }
   }
 
-  function handleSearch(e: React.FormEvent) {
-    e.preventDefault();
-    if (query.trim()) router.push(`/search?q=${encodeURIComponent(query.trim())}`);
-  }
-
   return (
     <div className="page">
-      <header className="topbar">
-        <div className="brand">
-          <img src="/favicon-32x32.png" alt="miniSocial" width={32} height={32} />
-        </div>
-        <form onSubmit={handleSearch} style={{ display: "flex", gap: 8, flex: 1 }}>
-          <input
-            className="search"
-            placeholder={t("home.search")}
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            autoFocus
-          />
-          <button className="btn btnSmall" type="submit">
-            {t("home.search_btn")}
-          </button>
-        </form>
-        <span className="spacer" />
-        <button className="ghostBtn" onClick={() => router.push("/home")} type="button">
-          {t("search.back")}
-        </button>
-      </header>
+      <Topbar />
 
       <main style={{ maxWidth: 640, margin: "32px auto", padding: "0 16px" }}>
         {loading && <p className="muted" style={{ textAlign: "center" }}>{t("search.loading")}</p>}

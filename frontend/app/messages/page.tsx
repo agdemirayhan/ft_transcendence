@@ -5,6 +5,7 @@ import { io, Socket } from 'socket.io-client';
 import Cookies from 'js-cookie';
 import { useRouter } from 'next/navigation';
 import Avatar from '@/components/Avatar';
+import Topbar from '@/components/Topbar';
 import { useTranslation } from 'react-i18next';
 import '../i18n';
 
@@ -143,11 +144,7 @@ export default function MessagesPage() {
   return (
     <div className="page">
       {/* Topbar */}
-      <header className="topbar">
-        <button className="ghostBtn btnSmall" onClick={() => router.push('/home')} type="button">
-          {t('messages.back')}
-        </button>
-      </header>
+      <Topbar />
 
       {/* Body */}
       <div style={{ flex: 1, display: 'flex', justifyContent: 'center', padding: '8px 32px 24px', overflow: 'hidden' }}>

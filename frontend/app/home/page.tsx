@@ -1,6 +1,7 @@
 "use client";
 
 import Avatar from "@/components/Avatar";
+import Topbar from "@/components/Topbar";
 import React, { useState, useEffect } from "react";
 import { HeartIcon as HeartSolid } from "@heroicons/react/24/solid";
 import { useRouter } from "next/navigation";
@@ -320,7 +321,6 @@ export default function Home() {
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [fadingIds, setFadingIds] = useState<Set<number>>(new Set());
   const [showFollowing, setShowFollowing] = useState<"following" | "followers" | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     const token = Cookies.get("token");
@@ -431,29 +431,7 @@ export default function Home() {
   return (
     <>
     <div className="page">
-      <header className="topbar">
-        <div className="brand">
-          <img src="/favicon-32x32.png" alt="miniSocial" width={32} height={32} />
-        </div>
-        <input
-          className="search"
-          placeholder={t("home.search")}
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter" && searchQuery.trim()) router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`); }}
-        />
-        <button
-          className="btn btnSmall"
-          onClick={() => { if (searchQuery.trim()) router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`); }}
-          type="button"
-        >
-          {t("home.search_btn")}
-        </button>
-        <span className="spacer" />
-        <button className="btn btnSmall btnOutline" onClick={() => setShowLogout(true)} type="button">
-          Log out
-        </button>
-      </header>
+      <Topbar />
 
       <main className="layout">
         <aside className="volume" />

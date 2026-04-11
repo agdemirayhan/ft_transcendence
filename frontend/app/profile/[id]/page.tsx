@@ -1,6 +1,7 @@
 "use client";
 
 import Avatar from "@/components/Avatar";
+import Topbar from "@/components/Topbar";
 import { useState, useEffect } from "react";
 import { HeartIcon as HeartSolid } from "@heroicons/react/24/solid";
 import { useRouter, useParams } from "next/navigation";
@@ -189,12 +190,7 @@ export default function UserProfilePage() {
 
   return (
     <div className="page">
-      <header className="topbar">
-        <button className="ghostBtn" onClick={() => router.back()} type="button">
-          {t("profile.back")}
-        </button>
-        <span className="profileTopbarName">{user?.username ?? "Profile"}</span>
-      </header>
+      <Topbar />
 
       <main className="profileMain">
 
