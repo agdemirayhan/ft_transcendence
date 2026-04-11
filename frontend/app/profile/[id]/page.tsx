@@ -2,7 +2,9 @@
 
 import Avatar from "@/components/Avatar";
 import Topbar from "@/components/Topbar";
-import { useState, useEffect } from "react";
+import LeftSidebar from "@/components/LeftSidebar";
+import RightSidebar from "@/components/RightSidebar";
+import { useState, useEffect, useLayoutEffect, useRef } from "react";
 import { HeartIcon as HeartSolid } from "@heroicons/react/24/solid";
 import { useRouter, useParams } from "next/navigation";
 import Cookies from "js-cookie";
@@ -46,6 +48,59 @@ function authHeaders(): HeadersInit {
 
 function Post({ post, onToggleLike }: { post: PostType; onToggleLike: (id: number) => void }) {
   const { t } = useTranslation();
+  const [expanded, setExpanded] = useState(false);
+  const [isLong, setIsLong] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [showCommentBox, setShowCommentBox] = useState(false);
+  const [commentText, setCommentText] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [commentCount, setCommentCount] = useState(0);
+  const [showComments, setShowComments] = useState(false);
+  const [commentsList, setCommentsList] = useState<{ id: number; author: { username: string }; content: string; createdAt: string }[]>([]);
+  const [loadingComments, setLoadingComments] = useState(false);
+
+  useLayoutEffect(() => {
+    if (!contentRef.current) return;
+    const el = contentRef.current;
+    const lineHeight = parseFloat(getComputedStyle(el).lineHeight) || 23;
+    if (el.scrollHeight > Math.ceil(lineHeight) + 2) setIsLong(true);
+  }, []);
+
+  async function toggleComments() {
+    if (showComments) { setShowComments(false); return; }
+    setShowComments(true);
+    if (commentsList.length > 0) return;
+    setLoadingComments(true);
+    try {
+      const res = await fetch(`${API_URL}/posts/${post.id}/comments`, { headers: authHeaders() });
+      const data = await res.json();
+      if (Array.isArray(data)) setCommentsList(data);
+    } finally {
+      setLoadingComments(false);
+    }
+  }
+
+  async function submitComment() {
+    const trimmed = commentText.trim();
+    if (!trimmed || isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      const res = await fetch(`${API_URL}/posts/${post.id}/comments`, {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify({ content: trimmed }),
+      });
+      const newComment = await res.json();
+      setCommentCount((c) => c + 1);
+      setCommentsList((prev) => [newComment, ...prev]);
+      setShowComments(true);
+      setCommentText("");
+      setShowCommentBox(false);
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
   return (
     <div className="post">
       <Avatar name={post.author} />
@@ -58,26 +113,86 @@ function Post({ post, onToggleLike }: { post: PostType; onToggleLike: (id: numbe
             <span className="time">{post.time}</span>
           </div>
         </div>
-        <div className="postContent">{post.content}</div>
-        <div className="postActions">
-          <button
-            className={`iconBtn ${post.liked ? "liked" : ""}`}
-            onClick={() => onToggleLike(post.id)}
-            aria-label="Like"
-            type="button"
-          >
-            <HeartSolid className={`icon ${post.liked ? "liked" : ""}`} />
-          </button>
-          <span className="muted">{post.likes}</span>
-          <span className="spacer" />
-          <button className="ghostBtn" onClick={() => alert("We'll add this later 🙂")} type="button">
-            {t("home.comment")}
-          </button>
-          <button className="ghostBtn" onClick={() => alert("We'll add this later 🙂")} type="button">
-            {t("home.share")}
-          </button>
+        <div
+          ref={contentRef}
+          className="postContent"
+          style={isLong && !expanded ? { whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", paddingRight: "20px" } : { paddingRight: "20px" }}
+        >
+          {post.content}
         </div>
+        <div className="postActions">
+          <div style={{ flex: 1, display: "flex", gap: 8, alignItems: "center" }}>
+            <button
+              className={`iconBtn ${post.liked ? "liked" : ""}`}
+              onClick={() => onToggleLike(post.id)}
+              aria-label="Like"
+              type="button"
+            >
+              <HeartSolid className={`icon ${post.liked ? "liked" : ""}`} />
+            </button>
+            <span className="muted">{post.likes}</span>
+            {commentCount > 0 ? <span className="commentCount" onClick={toggleComments}>{commentCount} {t("home.comments")}</span> : null}
+          </div>
+          <div style={{ flex: 1, display: "flex", justifyContent: "center" }}>
+            {isLong && (
+              <button
+                className="ghostBtn"
+                style={{ fontSize: 13, padding: "2px 10px" }}
+                onClick={() => setExpanded((v) => !v)}
+                type="button"
+              >
+                {expanded ? t("home.show_less") : t("home.show_more")}
+              </button>
+            )}
+          </div>
+          <div style={{ flex: 1, display: "flex", gap: 8, justifyContent: "flex-end", alignItems: "center" }}>
+            <button className="btn btnSmall" onClick={() => setShowCommentBox((v) => !v)} type="button">
+              {t("home.comment")}
+            </button>
+            <button className="ghostBtn" onClick={() => alert("We'll add this later 🙂")} type="button">
+              {t("home.share")}
+            </button>
+          </div>
+        </div>
+        {showCommentBox ? (
+          <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+            <input
+              className="authInput"
+              style={{ flex: 1, padding: "8px 12px" }}
+              placeholder={t("home.write_comment")}
+              value={commentText}
+              onChange={(e) => setCommentText(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") submitComment(); }}
+              autoFocus
+            />
+            <button
+              className="btn"
+              type="button"
+              onClick={submitComment}
+              disabled={!commentText.trim() || isSubmitting}
+            >
+              {t("home.send")}
+            </button>
+          </div>
+        ) : null}
       </div>
+      {showComments ? (
+        <div className="commentsList">
+          {loadingComments ? <p className="muted">Loading...</p> : null}
+          {commentsList.map((c) => (
+            <div key={c.id} className="commentItem">
+              <Avatar name={c.author.username} size={38} />
+              <div style={{ fontSize: 15 }}>
+                <div style={{ display: "flex", gap: 6, alignItems: "baseline" }}>
+                  <span className="name">{c.author.username}</span>
+                  <span className="muted" style={{ fontSize: 11 }}>{timeAgo(c.createdAt)}</span>
+                </div>
+                <p style={{ margin: 0 }}>{c.content}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -98,7 +213,6 @@ export default function UserProfilePage() {
     const token = Cookies.get("token");
     if (!token) { router.push("/"); return; }
 
-    // Check if this is the current user's profile and get follow status
     fetch(`${API_URL}/auth/me`, { headers: authHeaders() })
       .then((r) => r.json())
       .then((me) => {
@@ -133,6 +247,7 @@ export default function UserProfilePage() {
         }
       })
       .catch(console.error);
+
   }, [id]);
 
   async function toggleLike(id: number) {
@@ -192,67 +307,80 @@ export default function UserProfilePage() {
     <div className="page">
       <Topbar />
 
-      <main className="profileMain">
+      <main className="layout">
+        <aside className="volume" />
 
-        <div className="profileCover" />
+        <aside className="left">
+          <LeftSidebar />
+        </aside>
 
-        <div className="profileAvatarRow">
-          <div className="profileAvatar">
-            {user?.username?.[0]?.toUpperCase() ?? "?"}
+        <section className="center">
+          <div className="profileCover" />
+
+          <div className="profileAvatarRow">
+            <div className="profileAvatar">
+              {user?.username?.[0]?.toUpperCase() ?? "?"}
+            </div>
+            {isOwnProfile === true && (
+              <button className="ghostBtn" onClick={() => alert(t("profile.edit_soon"))} type="button">
+                {t("profile.edit_profile")}
+              </button>
+            )}
+            {isOwnProfile === false && (
+              <button
+                className={isFollowing ? "ghostBtn" : "btn btnSmall"}
+                onClick={toggleFollow}
+                disabled={followLoading}
+                type="button"
+              >
+                {followLoading ? "..." : isFollowing ? t("profile.unfollow") : t("profile.follow")}
+              </button>
+            )}
           </div>
-          {isOwnProfile === true && (
-            <button className="ghostBtn" onClick={() => alert(t("profile.edit_soon"))} type="button">
-              {t("profile.edit_profile")}
-            </button>
-          )}
-          {isOwnProfile === false && (
-            <button
-              className={isFollowing ? "ghostBtn" : "btn btnSmall"}
-              onClick={toggleFollow}
-              disabled={followLoading}
-              type="button"
-            >
-              {followLoading ? "..." : isFollowing ? t("profile.unfollow") : t("profile.follow")}
-            </button>
-          )}
-        </div>
 
-        <div className="profileInfo">
-          <div className="profileDisplayName">{user?.username ?? "..."}</div>
-          <div className="muted">@{user?.username ?? "..."}</div>
-          {user?.bio && <div className="profileBio">{user.bio}</div>}
-        </div>
-
-        <div className="stats profileStats">
-          <div className="stat">
-            <div className="statNum">{user?.stats?.posts ?? "-"}</div>
-            <div className="muted">{t("profile.posts")}</div>
+          <div className="profileInfo">
+            <div className="profileDisplayName">{user?.username ?? "..."}</div>
+            <div className="muted">@{user?.username ?? "..."}</div>
+            {user?.bio && <div className="profileBio">{user.bio}</div>}
           </div>
-          <div className="stat">
-            <div className="statNum">{user?.stats?.followers ?? "-"}</div>
-            <div className="muted">{t("profile.followers")}</div>
-          </div>
-          <div className="stat">
-            <div className="statNum">{user?.stats?.following ?? "-"}</div>
-            <div className="muted">{t("profile.following")}</div>
-          </div>
-        </div>
 
-        <div className="profileTabs">
-          <button type="button" className="profileTab active">{t("profile.posts")}</button>
-        </div>
+          <div className="stats profileStats">
+            <div className="stat">
+              <div className="statNum">{user?.stats?.posts ?? "-"}</div>
+              <div className="muted">{t("profile.posts")}</div>
+            </div>
+            <div className="stat">
+              <div className="statNum">{user?.stats?.followers ?? "-"}</div>
+              <div className="muted">{t("profile.followers")}</div>
+            </div>
+            <div className="stat">
+              <div className="statNum">{user?.stats?.following ?? "-"}</div>
+              <div className="muted">{t("profile.following")}</div>
+            </div>
+          </div>
 
-        <div className="feed">
-          {posts.length === 0 ? (
-            <div className="muted profileEmpty">{t("profile.no_posts")}</div>
-          ) : (
-            posts.map((p) => (
-              <div className="card" key={p.id}>
-                <Post post={p} onToggleLike={toggleLike} />
-              </div>
-            ))
-          )}
-        </div>
+          <div className="profileTabs">
+            <button type="button" className="profileTab active">{t("profile.posts")}</button>
+          </div>
+
+          <div className="feed">
+            {posts.length === 0 ? (
+              <div className="muted profileEmpty">{t("profile.no_posts")}</div>
+            ) : (
+              posts.map((p) => (
+                <div className="card" key={p.id}>
+                  <Post post={p} onToggleLike={toggleLike} />
+                </div>
+              ))
+            )}
+          </div>
+        </section>
+
+        <aside className="right">
+          <RightSidebar />
+        </aside>
+
+        <aside className="volume" />
       </main>
     </div>
   );

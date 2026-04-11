@@ -38,7 +38,7 @@ export default function Topbar() {
         </button>
       </form>
       <span className="spacer" />
-      <button className="btn btnSmall btnOutline" onClick={logout} type="button">
+      <button className="btn btnSmall btnOutline" onClick={logout} type="button" style={{ whiteSpace: "nowrap", flexShrink: 0 }}>
         Log out
       </button>
     </header>

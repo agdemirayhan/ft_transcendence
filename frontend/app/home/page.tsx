@@ -2,7 +2,9 @@
 
 import Avatar from "@/components/Avatar";
 import Topbar from "@/components/Topbar";
-import React, { useState, useEffect } from "react";
+import LeftSidebar from "@/components/LeftSidebar";
+import RightSidebar from "@/components/RightSidebar";
+import React, { useState, useEffect, useLayoutEffect, useRef } from "react";
 import { HeartIcon as HeartSolid } from "@heroicons/react/24/solid";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
@@ -121,6 +123,16 @@ function Post({
   const [showComments, setShowComments] = useState(false);
   const [commentsList, setCommentsList] = useState<{ id: number; author: { username: string }; content: string; createdAt: string }[]>([]);
   const [loadingComments, setLoadingComments] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const [isLong, setIsLong] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    if (!contentRef.current) return;
+    const el = contentRef.current;
+    const lineHeight = parseFloat(getComputedStyle(el).lineHeight) || 23;
+    if (el.scrollHeight > Math.ceil(lineHeight) + 2) setIsLong(true);
+  }, []);
 
   async function toggleComments() {
     if (showComments) { setShowComments(false); return; }
@@ -169,25 +181,46 @@ function Post({
             <span className="time">{post.time}</span>
           </div>
         </div>
-        <div className="postContent">{post.content}</div>
+        <div
+          ref={contentRef}
+          className="postContent"
+          style={isLong && !expanded ? { whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", paddingRight: "20px" } : { paddingRight: "20px" }}
+        >
+          {post.content}
+        </div>
         <div className="postActions">
-          <button
-            className={`iconBtn ${post.liked ? "liked" : ""}`}
-            onClick={() => onToggleLike(post.id)}
-            aria-label="Like"
-            type="button"
-          >
-            <HeartSolid className={`icon ${post.liked ? "liked" : ""}`} />
-          </button>
-          <span className="muted">{post.likes}</span>
-          {commentCount > 0 ? <span className="commentCount" onClick={toggleComments}>{commentCount} {t("home.comments")}</span> : null}
-          <span className="spacer" />
-          <button className="btn btnSmall" onClick={() => setShowCommentBox((v) => !v)} type="button">
-            {t("home.comment")}
-          </button>
-          <button className="ghostBtn" onClick={() => alert("We'll add this later 🙂")} type="button">
-            {t("home.share")}
-          </button>
+          <div style={{ flex: 1, display: "flex", gap: 8, alignItems: "center" }}>
+            <button
+              className={`iconBtn ${post.liked ? "liked" : ""}`}
+              onClick={() => onToggleLike(post.id)}
+              aria-label="Like"
+              type="button"
+            >
+              <HeartSolid className={`icon ${post.liked ? "liked" : ""}`} />
+            </button>
+            <span className="muted">{post.likes}</span>
+            {commentCount > 0 ? <span className="commentCount" onClick={toggleComments}>{commentCount} {t("home.comments")}</span> : null}
+          </div>
+          <div style={{ flex: 1, display: "flex", justifyContent: "center" }}>
+            {isLong && (
+              <button
+                className="ghostBtn"
+                style={{ fontSize: 13, padding: "2px 10px" }}
+                onClick={() => setExpanded((v) => !v)}
+                type="button"
+              >
+                {expanded ? t("home.show_less") : t("home.show_more")}
+              </button>
+            )}
+          </div>
+          <div style={{ flex: 1, display: "flex", gap: 8, justifyContent: "flex-end", alignItems: "center" }}>
+            <button className="btn btnSmall" onClick={() => setShowCommentBox((v) => !v)} type="button">
+              {t("home.comment")}
+            </button>
+            <button className="ghostBtn" onClick={() => alert("We'll add this later 🙂")} type="button">
+              {t("home.share")}
+            </button>
+          </div>
         </div>
         {showCommentBox ? (
           <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
@@ -304,12 +337,6 @@ type UserProfile = {
   stats: { posts: number; followers: number; following: number };
 };
 
-type Suggestion = {
-  id: number;
-  username: string;
-  followers: number;
-  isFollowing: boolean;
-};
 
 export default function Home() {
   const router = useRouter();
@@ -318,8 +345,6 @@ export default function Home() {
   const [showLogout, setShowLogout] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
-  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
-  const [fadingIds, setFadingIds] = useState<Set<number>>(new Set());
   const [showFollowing, setShowFollowing] = useState<"following" | "followers" | null>(null);
 
   useEffect(() => {
@@ -344,12 +369,6 @@ export default function Home() {
       })
       .catch(console.error);
 
-    fetch(`${API_URL}/users/suggestions`, { headers: authHeaders() })
-      .then((r) => r.json())
-      .then((data) => {
-        if (Array.isArray(data)) setSuggestions(data);
-      })
-      .catch(console.error);
   }, []);
 
   async function addPost(content: string) {
@@ -403,28 +422,6 @@ export default function Home() {
     }
   }
 
-  async function toggleSuggestionFollow(userId: number) {
-    try {
-      const res = await fetch(`${API_URL}/users/${userId}/follow`, {
-        method: "POST",
-        headers: authHeaders(),
-      });
-      const data = await res.json();
-      if (typeof data.isFollowing !== "boolean") return;
-
-      setFadingIds((prev) => new Set(prev).add(userId));
-      setTimeout(() => {
-        setSuggestions((prev) => prev.filter((s) => s.id !== userId));
-        setFadingIds((prev) => { const next = new Set(prev); next.delete(userId); return next; });
-        setCurrentUser((prev) => prev ? {
-          ...prev,
-          stats: { ...prev.stats, following: prev.stats.following + 1 },
-        } : prev);
-      }, 400);
-    } catch (e) {
-      console.error(e);
-    }
-  }
 
   if (!authChecked) return null;
 
@@ -464,18 +461,7 @@ export default function Home() {
             </button>
           </Card>
 
-          <Card title={t("home.shortcuts")}>
-            <div className="list">
-              <button className="linkBtn" type="button">{t("home.feed")}</button>
-              <button className="linkBtn" type="button">{t("home.explore")}</button>
-              <button className="linkBtn" onClick={() => router.push("/messages")} type="button">
-                {t("home.messages")}
-              </button>
-              <button className="linkBtn" onClick={() => router.push("/settings")} type="button">
-                {t("home.settings")}
-              </button>
-            </div>
-          </Card>
+          <LeftSidebar />
         </aside>
 
         <section className="center">
@@ -492,47 +478,7 @@ export default function Home() {
         </section>
 
         <aside className="right">
-          <Card title={t("home.trending")}>
-            <div className="chips">
-              <span className="chip">#react</span>
-              <span className="chip">#frontend</span>
-              <span className="chip">#42school</span>
-              <span className="chip">#nextjs</span>
-            </div>
-          </Card>
-
-          <Card title={t("home.suggestions")}>
-            <div className="suggestions">
-              {suggestions.map((u) => (
-                <div
-                  className="suggestion"
-                  key={u.id}
-                  style={{
-                    opacity: fadingIds.has(u.id) ? 0 : 1,
-                    transform: fadingIds.has(u.id) ? "translateX(12px)" : "none",
-                  }}
-                >
-                  <div className="row" onClick={() => router.push(`/profile/${u.id}`)}>
-                    <Avatar name={u.username} />
-                    <div>
-                      <div className="name">{u.username}</div>
-                      <div className="muted">@{u.username}</div>
-                    </div>
-                  </div>
-                  <button
-                    className="btn btnSmall"
-                    onClick={() => toggleSuggestionFollow(u.id)}
-                    type="button"
-                  >
-                    {t("home.follow")}
-                  </button>
-                </div>
-              ))}
-              {suggestions.length === 0 && (
-                <div className="muted" style={{ fontSize: 13 }}>No suggestions yet.</div>
-              )}
-            </div>
-          </Card>
+          <RightSidebar />
         </aside>
 
         <aside className="volume" />

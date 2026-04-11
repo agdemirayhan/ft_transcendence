@@ -86,7 +86,7 @@ body {
   display: flex;
   gap: 12px;
   align-items: center;
-  padding: 12px 80px;
+  padding: 12px clamp(16px, 5vw, 80px);
   /* border-bottom: 1px solid var(--border); */
   /* background: rgba(11,18,32,0.75); */
   backdrop-filter: blur(10px);
@@ -130,6 +130,7 @@ body {
 .center {
   justify-self: center;
   width: 100%;
+  min-width: 530px;
   height: 100%;
   overflow-y: auto;
   padding-right: 4px;
@@ -142,19 +143,14 @@ body {
   gap: 8px;
 }
 
-@media (max-width: 1200px) {
+@media (max-width: 1400px) {
   .layout {
     grid-template-columns: 32px clamp(260px, 22vw, 340px) minmax(0, 1fr) 32px;
     .right { display: none; }
   }
 }
 
-@media (max-width: 980px) {
-  .layout { grid-template-columns: 1fr; }
-  .left, .right { display: none; }
-}
-
-@media (max-width: 980px) {
+@media (max-width: 1000px) {
   .layout { grid-template-columns: 1fr; }
   .left, .right { display: none; }
 }
@@ -384,7 +380,7 @@ button:active {
   grid-template-columns: 42px 1fr;
   gap: 10px;
 }
-.postBody { display: grid; gap: 8px; }
+.postBody { display: grid; gap: 8px; min-width: 0; overflow: hidden; }
 .postHeader { display: flex; justify-content: space-between; align-items: center; }
 .postAuthor { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
 .name { font-weight: 900; }
@@ -392,7 +388,13 @@ button:active {
 .handle, .time { color: var(--muted); font-size: 13px; }
 .dot { color: var(--muted); }
 
-.postContent { line-height: 1.45; }
+.postContent {
+  line-height: 1.45;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  white-space: pre-wrap;
+  min-width: 0;
+}
 .postActions { display: flex; gap: 8px; align-items: center; margin-top: 4px; }
 .spacer { flex: 1; }
 
@@ -456,6 +458,7 @@ button:active {
 
 .profileMain {
   max-width: 680px;
+  min-width: 500px;
   margin: 0 auto;
   width: 100%;
   padding: 0 16px 40px;

@@ -73,7 +73,9 @@
     "whats_happening": "Was passiert?",
     "comment": "Kommentar",
     "share": "Teilen",
-    "just_now": "gerade eben"
+    "just_now": "gerade eben",
+    "show_more": "Mehr anzeigen",
+    "show_less": "Weniger anzeigen"
   },
   "search": {
     "back": "← Zurück",
