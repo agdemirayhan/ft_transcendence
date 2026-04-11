@@ -60,6 +60,35 @@ export class UsersService {
     };
   }
 
+  async searchUsers(query: string, currentUserId: number) {
+    const users = await this.prisma.user.findMany({
+      where: {
+        id: { not: currentUserId },
+        username: { contains: query, mode: 'insensitive' },
+      },
+      select: {
+        id: true,
+        username: true,
+        bio: true,
+        _count: { select: { followers: true, posts: true } },
+        followers: {
+          where: { followerId: currentUserId },
+          select: { followerId: true },
+        },
+      },
+      take: 20,
+    });
+
+    return users.map((u) => ({
+      id: u.id,
+      username: u.username,
+      bio: u.bio,
+      followers: u._count.followers,
+      posts: u._count.posts,
+      isFollowing: u.followers.length > 0,
+    }));
+  }
+
   async getSuggestions(currentUserId: number) {
     const users = await this.prisma.user.findMany({
       where: {

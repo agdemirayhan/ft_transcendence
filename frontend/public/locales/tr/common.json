@@ -73,6 +73,13 @@
     "whats_happening": "Ne oluyor?",
     "comment": "Yorum",
     "share": "Paylaş",
-    "just_now": "şimdi"
+    "just_now": "şimdi",
+    "show_more": "Devamını gör",
+    "show_less": "Daha az göster"
+  },
+  "search": {
+    "back": "← Geri",
+    "loading": "Aranıyor...",
+    "no_results": "\"{{query}}\" için kullanıcı bulunamadı"
   }
 }

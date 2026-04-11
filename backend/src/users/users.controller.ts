@@ -1,10 +1,16 @@
-import { Controller, Get, Post, Delete, Param, ParseIntPipe, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Param, ParseIntPipe, UseGuards, Req, Query } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { JwtAuthGuard } from '../auth/jwt/jwt.guard';
 
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
+
+  @UseGuards(JwtAuthGuard)
+  @Get('search')
+  async searchUsers(@Query('q') q: string, @Req() req: any) {
+    return this.usersService.searchUsers(q ?? '', req.user.id);
+  }
 
   @UseGuards(JwtAuthGuard)
   @Get('suggestions')

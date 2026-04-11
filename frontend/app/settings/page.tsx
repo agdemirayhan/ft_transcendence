@@ -5,6 +5,7 @@ import { ChangeEvent, useEffect, useState } from "react";
 import Cookies from "js-cookie";
 import { useTranslation } from "react-i18next";
 import "../i18n";
+import Topbar from "@/components/Topbar";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
 
@@ -167,11 +168,7 @@ export default function SettingsPage() {
 
   return (
     <div className="page">
-      <header className="topbar">
-        <button className="ghostBtn" onClick={() => router.back()} type="button">
-          {t("settings.back")}
-        </button>
-      </header>
+      <Topbar />
 
       <main style={{ maxWidth: 600, margin: "40px auto", padding: "0 16px" }}>
         <div className="card">

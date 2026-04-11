@@ -73,6 +73,13 @@
     "whats_happening": "What's happening?",
     "comment": "Comment",
     "share": "Share",
-    "just_now": "just now"
+    "just_now": "just now",
+    "show_more": "Show more",
+    "show_less": "Show less"
+  },
+  "search": {
+    "back": "← Back",
+    "loading": "Searching...",
+    "no_results": "No users found for \"{{query}}\""
   }
 }
