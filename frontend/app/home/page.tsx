@@ -6,6 +6,7 @@ import LeftSidebar from "@/components/LeftSidebar";
 import RightSidebar from "@/components/RightSidebar";
 import React, { useState, useEffect, useLayoutEffect, useRef } from "react";
 import { HeartIcon as HeartSolid } from "@heroicons/react/24/solid";
+import { PaperClipIcon } from "@heroicons/react/24/outline";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import "../i18n";
@@ -16,13 +17,24 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
 type PostType = {
   id: number;
   authorId: number;
-  author: string;
+  //author: string;
   handle: string;
   time: string;
+  author: {
+    id: number;
+    username: string;
+    avatarUrl: string;
+  };
   content: string;
+  files: Array<{
+    id: number;
+    filename: string;
+    url: string;
+  }>;
   likes: number;
   comments: number;
   liked: boolean;
+  createdAt: string;
 };
 
 function timeAgo(dateStr: string): string {
@@ -72,14 +84,17 @@ function Card({ title, children }: { title?: string; children: React.ReactNode }
 
 function PostComposer({ onPost, username }: { onPost: (content: string) => void; username: string }) {
   const [text, setText] = useState("");
+  const [attachment, setAttachment] = useState<File | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const { t } = useTranslation();
 
   function submit(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
     const trimmed = text.trim();
     if (!trimmed) return;
-    onPost(trimmed);
+    onPost(trimmed, attachment || undefined);
     setText("");
+    setAttachment(null);
   }
 
   return (
@@ -94,12 +109,35 @@ function PostComposer({ onPost, username }: { onPost: (content: string) => void;
             placeholder={t("home.whats_happening")}
             rows={3}
             maxLength={240}
+            disabled={isLoading}
           />
         </div>
         <div className="composerBottom">
-          <span className="muted">{text.length}/240</span>
-          <button className="btn" type="submit">
-            {t("home.search_btn") === "Search" ? "Post" : t("home.search_btn")}
+          <div className="composerMetaLeft">
+            <input
+              id="post-attachment"
+              type="file"
+              hidden
+              accept="image/png,image/jpeg"
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setAttachment(e.target.files?.[0] || null)
+              }
+            />
+            <button
+              className="attachBtn"
+              type="button"
+              aria-label="Attach file"
+              title="Attach file"
+              onClick={() => document.getElementById("post-attachment")?.click()}
+              disabled={isLoading}
+            >
+              <PaperClipIcon className="attachIcon" />
+            </button>
+            <span className="muted">{text.length}/240</span>
+            {attachment ? <span className="muted">• {attachment.name}</span> : null}
+          </div>
+          <button className="btn" type="submit" disabled={isLoading}>
+            {isLoading ? "Posting..." : (t("home.search_btn") === "Search" ? "Post" : t("home.search_btn"))}
           </button>
         </div>
       </form>
@@ -171,14 +209,14 @@ function Post({
 
   return (
     <div className="post">
-      <Avatar name={post.author} />
+      <Avatar name={post.author.username} />
       <div className="postBody">
         <div className="postHeader">
           <div className="postAuthor">
             <span className="name" onClick={() => router.push(`/profile/${post.authorId}`)}>{post.author}</span>
             <span className="handle">{post.handle}</span>
             <span className="dot">•</span>
-            <span className="time">{post.time}</span>
+            <span className="time">{timeAgo}</span>
           </div>
         </div>
         <div
@@ -473,7 +511,19 @@ export default function Home() {
               <Card key={p.id}>
                 <Post post={p} onToggleLike={toggleLike} />
               </Card>
-            ))}
+            ) : posts.length === 0 ? (
+              <Card>
+                <div style={{ padding: "20px", textAlign: "center", color: "var(--muted)" }}>
+                  No posts yet. Be the first to post!
+                </div>
+              </Card>
+            ) : (
+              posts.map((p) => (
+                <Card key={p.id}>
+                  <Post post={p} onToggleLike={toggleLike} />
+                </Card>
+              ))
+            )}
           </div>
         </section>
 

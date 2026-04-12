@@ -41,6 +41,8 @@
     "@nestjs/schematics": "^10.1.4",
     "@nestjs/testing": "^10.4.4",
     "@types/bcryptjs": "^2.4.6",
+    "@types/express": "^4.17.21",
+    "@types/multer": "^1.4.11",
     "@types/node": "^20.17.6",
     "@types/passport-jwt": "^4.0.1",
     "@types/passport-local": "^1.0.38",

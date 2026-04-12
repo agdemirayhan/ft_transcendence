@@ -373,6 +373,36 @@ button:active {
   justify-content: space-between;
 }
 
+.composerMetaLeft {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.attachBtn {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: rgba(255,255,255,0.04);
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.attachBtn:hover {
+  background: rgba(255,255,255,0.08);
+  color: var(--text);
+}
+
+.attachIcon {
+  width: 18px;
+  height: 18px;
+}
+
 .feed { display: grid; gap: 12px; margin-top: 12px; }
 
 .post {
