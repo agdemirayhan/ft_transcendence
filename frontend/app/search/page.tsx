@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import Cookies from "js-cookie";
@@ -26,8 +26,7 @@ type SearchUser = {
   posts: number;
   isFollowing: boolean;
 };
-
-export default function SearchPage() {
+function SearchContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { t } = useTranslation();
@@ -135,5 +134,13 @@ export default function SearchPage() {
         )}
       </main>
     </div>
+  );
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense fallback={<div className="page"><Topbar /></div>}>
+      <SearchContent />
+    </Suspense>
   );
 }

@@ -11,20 +11,21 @@ import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import "../i18n";
 import Cookies from "js-cookie";
+import Image from "next/image";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
 
 type PostType = {
   id: number;
   authorId: number;
-  //author: string;
+  author: string;
   handle: string;
   time: string;
-  author: {
-    id: number;
-    username: string;
-    avatarUrl: string;
-  };
+  //author: {
+  //  id: number;
+  //  username: string;
+  //  avatarUrl: string;
+  //};
   content: string;
   files: Array<{
     id: number;
@@ -53,12 +54,20 @@ function authHeaders(): HeadersInit {
   };
 }
 
+function authUploadHeaders(): HeadersInit {
+  const token = Cookies.get("token");
+  return {
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+}
+
 function mapPost(p: {
   id: number;
   content: string;
   createdAt: string;
   author: { id: number; username: string };
   counts: { likes: number; comments: number };
+  files?: Array<{ id: number; filename: string; url: string }>;
 }): PostType {
   return {
     id: p.id,
@@ -67,9 +76,11 @@ function mapPost(p: {
     handle: `@${p.author.username}`,
     time: timeAgo(p.createdAt),
     content: p.content,
+    files: Array.isArray(p.files) ? p.files : [],
     likes: p.counts.likes,
     comments: p.counts.comments ?? 0,
     liked: false,
+    createdAt: p.createdAt,
   };
 }
 
@@ -82,19 +93,24 @@ function Card({ title, children }: { title?: string; children: React.ReactNode }
   );
 }
 
-function PostComposer({ onPost, username }: { onPost: (content: string) => void; username: string }) {
+function PostComposer({ onPost, username }: { onPost: (content: string, attachment?: File | null) => Promise<void>; username: string }) {
   const [text, setText] = useState("");
   const [attachment, setAttachment] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { t } = useTranslation();
 
-  function submit(e: React.SyntheticEvent<HTMLFormElement>) {
+  async function submit(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
     const trimmed = text.trim();
     if (!trimmed) return;
-    onPost(trimmed, attachment || undefined);
-    setText("");
-    setAttachment(null);
+    setIsLoading(true);
+    try {
+      await onPost(trimmed, attachment);
+      setText("");
+      setAttachment(null);
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   return (
@@ -209,14 +225,14 @@ function Post({
 
   return (
     <div className="post">
-      <Avatar name={post.author.username} />
+      <Avatar name={post.author} />
       <div className="postBody">
         <div className="postHeader">
           <div className="postAuthor">
             <span className="name" onClick={() => router.push(`/profile/${post.authorId}`)}>{post.author}</span>
             <span className="handle">{post.handle}</span>
             <span className="dot">•</span>
-            <span className="time">{timeAgo}</span>
+            <span className="time">{post.time}</span>
           </div>
         </div>
         <div
@@ -226,6 +242,21 @@ function Post({
         >
           {post.content}
         </div>
+        {post.files.length > 0 ? (
+          <div style={{ marginTop: 10, display: "grid", gap: 8 }}>
+            {post.files.map((file) => (
+              <Image
+                key={file.id}
+                src={`${API_URL}${file.url}`}
+                alt={file.filename}
+                width={1200}
+                height={900}
+                style={{ width: "100%", borderRadius: 12, border: "1px solid var(--border)" }}
+                unoptimized
+              />
+            ))}
+          </div>
+        ) : null}
         <div className="postActions">
           <div style={{ flex: 1, display: "flex", gap: 8, alignItems: "center" }}>
             <button
@@ -381,7 +412,7 @@ export default function Home() {
   const { t } = useTranslation();
   const [posts, setPosts] = useState<PostType[]>([]);
   const [showLogout, setShowLogout] = useState(false);
-  const [authChecked, setAuthChecked] = useState(false);
+  const [authChecked] = useState(() => Boolean(Cookies.get("token")));
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
   const [showFollowing, setShowFollowing] = useState<"following" | "followers" | null>(null);
 
@@ -391,7 +422,6 @@ export default function Home() {
       router.push("/");
       return;
     }
-    setAuthChecked(true);
 
     fetch(`${API_URL}/auth/me`, { headers: authHeaders() })
       .then((r) => r.json())
@@ -407,14 +437,36 @@ export default function Home() {
       })
       .catch(console.error);
 
-  }, []);
+  }, [router]);
 
-  async function addPost(content: string) {
+  async function addPost(content: string, attachment?: File | null) {
     try {
+      let fileId: number | undefined;
+
+      if (attachment) {
+        const formData = new FormData();
+        formData.append("file", attachment);
+
+        const uploadRes = await fetch(`${API_URL}/upload`, {
+          method: "POST",
+          headers: authUploadHeaders(),
+          body: formData,
+        });
+
+        if (!uploadRes.ok) {
+          return;
+        }
+
+        const uploaded = await uploadRes.json();
+        if (typeof uploaded?.id === "number") {
+          fileId = uploaded.id;
+        }
+      }
+
       const res = await fetch(`${API_URL}/posts`, {
         method: "POST",
         headers: authHeaders(),
-        body: JSON.stringify({ content }),
+        body: JSON.stringify({ content, fileId }),
       });
       if (!res.ok) return;
       const data = await res.json();
@@ -506,24 +558,18 @@ export default function Home() {
           <PostComposer onPost={addPost} username={currentUser?.username ?? "You"} />
           <div className="feed">
             {posts.length === 0 ? (
-              <p className="muted" style={{ textAlign: "center", marginTop: 32 }}>{t("home.empty_feed")}</p>
-            ) : posts.map((p) => (
-              <Card key={p.id}>
-                <Post post={p} onToggleLike={toggleLike} />
-              </Card>
-            ) : posts.length === 0 ? (
-              <Card>
-                <div style={{ padding: "20px", textAlign: "center", color: "var(--muted)" }}>
-                  No posts yet. Be the first to post!
-                </div>
-              </Card>
-            ) : (
-              posts.map((p) => (
-                <Card key={p.id}>
-                  <Post post={p} onToggleLike={toggleLike} />
-                </Card>
-              ))
-            )}
+  <Card>
+    <div style={{ padding: "20px", textAlign: "center", color: "var(--muted)" }}>
+      No posts yet. Be the first to post!
+    </div>
+  </Card>
+) : (
+  posts.map((p) => (
+    <Card key={p.id}>
+      <Post post={p} onToggleLike={toggleLike} />
+    </Card>
+  ))
+)}
           </div>
         </section>
 

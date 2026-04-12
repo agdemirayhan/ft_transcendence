@@ -1,4 +1,15 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Post, Request, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseIntPipe,
+  Post,
+  Query,
+  Request,
+  UseGuards,
+} from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt/jwt.guard';
 import { CreateCommentDto } from './create-comment.dto';
 import { CreatePostDto } from './create-post.dto';
@@ -16,8 +27,11 @@ export class PostsController {
   constructor(private readonly postsService: PostsService) {}
 
   @Get()
-  async list() {
-    return this.postsService.list();
+  async list(
+    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+    @Query('offset', new ParseIntPipe({ optional: true })) offset?: number,
+  ) {
+    return this.postsService.list(limit || 20, offset || 0);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -29,7 +43,18 @@ export class PostsController {
   @UseGuards(JwtAuthGuard)
   @Post()
   async create(@Request() req: JwtRequest, @Body() body: CreatePostDto) {
-    return this.postsService.create(req.user.id, body.content);
+    return this.postsService.create(req.user.id, body.content, body.fileId);
+  }
+
+  @Get(':id')
+  async getPost(@Param('id', ParseIntPipe) postId: number) {
+    return this.postsService.getPost(postId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete(':id')
+  async deletePost(@Request() req: JwtRequest, @Param('id', ParseIntPipe) postId: number) {
+    return this.postsService.deletePost(postId, req.user.id);
   }
 
   @UseGuards(JwtAuthGuard)

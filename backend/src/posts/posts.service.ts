@@ -5,11 +5,17 @@ type PostWithRelations = {
   id: number;
   content: string;
   createdAt: Date;
+  updatedAt: Date;
   author: {
     id: number;
     username: string;
     avatarUrl: string | null;
   };
+  files: {
+    id: number;
+    filename: string;
+    mimetype: string;
+  }[];
   _count: {
     likes: number;
     comments: number;
@@ -31,8 +37,10 @@ type CommentWithAuthor = {
 export class PostsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async list() {
+  async list(limit: number = 20, offset: number = 0) {
     const posts = await this.prisma.post.findMany({
+      take: limit,
+      skip: offset,
       orderBy: { createdAt: 'desc' },
       include: {
         author: {
@@ -40,6 +48,13 @@ export class PostsService {
             id: true,
             username: true,
             avatarUrl: true,
+          },
+        },
+        files: {
+          select: {
+            id: true,
+            filename: true,
+            mimetype: true,
           },
         },
         _count: {
@@ -75,6 +90,13 @@ export class PostsService {
             avatarUrl: true,
           },
         },
+        files: {
+          select: {
+            id: true,
+            filename: true,
+            mimetype: true,
+          },
+        },
         _count: {
           select: {
             likes: true,
@@ -87,7 +109,7 @@ export class PostsService {
     return posts.map((post) => this.toResponse(post));
   }
 
-  async create(authorId: number, content: string) {
+  async create(authorId: number, content: string, fileId?: number) {
     const trimmed = content?.trim();
     if (!trimmed) {
       throw new BadRequestException('Content cannot be empty');
@@ -96,26 +118,65 @@ export class PostsService {
       throw new BadRequestException('Content must be 500 characters or fewer');
     }
 
-    const post = await this.prisma.post.create({
-      data: {
-        authorId,
-        content: trimmed,
-      },
-      include: {
-        author: {
-          select: {
-            id: true,
-            username: true,
-            avatarUrl: true,
+    if (typeof fileId !== 'undefined') {
+      const file = await this.prisma.file.findUnique({
+        where: { id: fileId },
+        select: { id: true, authorId: true, postId: true },
+      });
+
+      if (!file) {
+        throw new BadRequestException('File not found');
+      }
+
+      if (file.authorId !== authorId) {
+        throw new BadRequestException('You can only attach your own file');
+      }
+
+      if (file.postId !== null) {
+        throw new BadRequestException('File is already attached to a post');
+      }
+    }
+
+    const post = await this.prisma.$transaction(async (tx) => {
+      const createdPost = await tx.post.create({
+        data: {
+          authorId,
+          content: trimmed,
+        },
+      });
+
+      if (typeof fileId !== 'undefined') {
+        await tx.file.update({
+          where: { id: fileId },
+          data: { postId: createdPost.id },
+        });
+      }
+
+      return tx.post.findUniqueOrThrow({
+        where: { id: createdPost.id },
+        include: {
+          author: {
+            select: {
+              id: true,
+              username: true,
+              avatarUrl: true,
+            },
+          },
+          files: {
+            select: {
+              id: true,
+              filename: true,
+              mimetype: true,
+            },
+          },
+          _count: {
+            select: {
+              likes: true,
+              comments: true,
+            },
           },
         },
-        _count: {
-          select: {
-            likes: true,
-            comments: true,
-          },
-        },
-      },
+      });
     });
 
     return this.toResponse(post);
@@ -166,6 +227,61 @@ export class PostsService {
       liked: !existingLike,
       likesCount,
     };
+  }
+
+  async getPost(postId: number) {
+    const post = await this.prisma.post.findUnique({
+      where: { id: postId },
+      include: {
+        author: {
+          select: {
+            id: true,
+            username: true,
+            avatarUrl: true,
+          },
+        },
+        files: {
+          select: {
+            id: true,
+            filename: true,
+            mimetype: true,
+          },
+        },
+        _count: {
+          select: {
+            likes: true,
+            comments: true,
+          },
+        },
+      },
+    });
+
+    if (!post) {
+      throw new NotFoundException('Post not found');
+    }
+
+    return this.toResponse(post);
+  }
+
+  async deletePost(postId: number, userId: number) {
+    const post = await this.prisma.post.findUnique({
+      where: { id: postId },
+      select: { id: true, authorId: true },
+    });
+
+    if (!post) {
+      throw new NotFoundException('Post not found');
+    }
+
+    if (post.authorId !== userId) {
+      throw new BadRequestException('You can only delete your own posts');
+    }
+
+    await this.prisma.post.delete({
+      where: { id: postId },
+    });
+
+    return { message: 'Post deleted successfully' };
   }
 
   async listComments(postId: number) {
@@ -224,7 +340,14 @@ export class PostsService {
       id: post.id,
       content: post.content,
       createdAt: post.createdAt,
+      updatedAt: post.updatedAt,
       author: post.author,
+      files: post.files.map((file) => ({
+        id: file.id,
+        filename: file.filename,
+        mimetype: file.mimetype,
+        url: `/upload/${file.id}`,
+      })),
       counts: {
         likes: post._count.likes,
         comments: post._count.comments,

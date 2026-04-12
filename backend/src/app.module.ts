@@ -9,7 +9,6 @@ import { PostsModule } from './posts/posts.module';
 import { UsersModule } from './users/users.module';
 import { ChatModule } from './chat/chat.module';
 import { UploadModule } from './upload/upload.module';
-import { PostModule } from './posts/post.module';
 
 @Module({
   imports: [
@@ -21,7 +20,6 @@ import { PostModule } from './posts/post.module';
     UsersModule,
     ChatModule,
     UploadModule,
-    PostModule,
   ],
   controllers: [AppController],
   providers: [AppService],
