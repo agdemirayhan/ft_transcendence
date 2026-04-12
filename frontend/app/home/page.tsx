@@ -574,7 +574,7 @@ export default function Home() {
         </section>
 
         <aside className="right">
-          <RightSidebar />
+          <RightSidebar onFollow={() => setCurrentUser((u) => u ? { ...u, stats: { ...u.stats, following: u.stats.following + 1 } } : u)} />
         </aside>
 
         <aside className="volume" />
