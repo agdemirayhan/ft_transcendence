@@ -92,7 +92,7 @@ function Card({ title, children }: { title?: string; children: React.ReactNode }
   );
 }
 
-function PostComposer({ onPost, username }: { onPost: (content: string, attachment?: File | null) => Promise<void>; username: string }) {
+function PostComposer({ onPost, username }: { onPost: (content: string, attachment?: File | null) => Promise<boolean>; username: string }) {
   const [text, setText] = useState("");
   const [attachment, setAttachment] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -101,12 +101,14 @@ function PostComposer({ onPost, username }: { onPost: (content: string, attachme
   async function submit(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
     const trimmed = text.trim();
-    if (!trimmed) return;
+    if (!trimmed && !attachment) return;
     setIsLoading(true);
     try {
-      await onPost(trimmed, attachment);
-      setText("");
-      setAttachment(null);
+      const ok = await onPost(trimmed, attachment);
+      if (ok) {
+        setText("");
+        setAttachment(null);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -414,7 +416,7 @@ export default function Home() {
   const { t } = useTranslation();
   const [posts, setPosts] = useState<PostType[]>([]);
 
-  const [authChecked] = useState(() => Boolean(Cookies.get("token")));
+  const [authChecked, setAuthChecked] = useState(false);
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
   const [showFollowing, setShowFollowing] = useState<"following" | "followers" | null>(null);
 
@@ -424,6 +426,7 @@ export default function Home() {
       router.push("/");
       return;
     }
+    setAuthChecked(true);
     fetch(`${API_URL}/auth/me`, { headers: authHeaders() })
       .then((r) => r.json())
       .then((data) => setCurrentUser(data))
@@ -440,7 +443,7 @@ export default function Home() {
 
   }, [router]);
 
-  async function addPost(content: string, attachment?: File | null) {
+  async function addPost(content: string, attachment?: File | null): Promise<boolean> {
     try {
       let fileId: number | undefined;
 
@@ -454,9 +457,7 @@ export default function Home() {
           body: formData,
         });
 
-        if (!uploadRes.ok) {
-          return;
-        }
+        if (!uploadRes.ok) return false;
 
         const uploaded = await uploadRes.json();
         if (typeof uploaded?.id === "number") {
@@ -469,12 +470,14 @@ export default function Home() {
         headers: authHeaders(),
         body: JSON.stringify({ content, fileId }),
       });
-      if (!res.ok) return;
+      if (!res.ok) return false;
       const data = await res.json();
       setPosts((p) => [mapPost(data), ...p]);
       setCurrentUser((u) => u ? { ...u, stats: { ...u.stats, posts: u.stats.posts + 1 } } : u);
+      return true;
     } catch (e) {
       console.error(e);
+      return false;
     }
   }
 
