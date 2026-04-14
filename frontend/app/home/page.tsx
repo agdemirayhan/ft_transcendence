@@ -4,6 +4,7 @@ import Avatar from "@/components/Avatar";
 import Topbar from "@/components/Topbar";
 import LeftSidebar from "@/components/LeftSidebar";
 import RightSidebar from "@/components/RightSidebar";
+import ProfileCard from "@/components/ProfileCard";
 import React, { useState, useEffect, useLayoutEffect, useRef } from "react";
 import { HeartIcon as HeartSolid } from "@heroicons/react/24/solid";
 import { PaperClipIcon, PhotoIcon } from "@heroicons/react/24/outline";
@@ -418,7 +419,6 @@ export default function Home() {
 
   const [authChecked, setAuthChecked] = useState(false);
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
-  const [showFollowing, setShowFollowing] = useState<"following" | "followers" | null>(null);
 
   useEffect(() => {
     const token = Cookies.get("token");
@@ -528,33 +528,7 @@ export default function Home() {
         <aside className="volume" />
 
         <aside className="left">
-          <Card title={t("home.profile")}>
-            <div className="profile">
-              <Avatar name={currentUser?.username ?? "?"} />
-              <div>
-                <div className="profileName" style={{ cursor: "pointer" }} onClick={() => currentUser && router.push(`/profile/${currentUser.id}`)}>{currentUser?.username ?? "..."}</div>
-                <div className="muted">@{currentUser?.username ?? "..."}</div>
-              </div>
-            </div>
-            <div className="stats">
-              <div className="stat statClickable" onClick={() => currentUser && router.push(`/profile/${currentUser.id}`)}>
-                <div className="statNum">{currentUser?.stats?.posts ?? "-"}</div>
-                <div className="muted">{t("home.posts")}</div>
-              </div>
-              <div className="stat statClickable" onClick={() => setShowFollowing("followers")}>
-                <div className="statNum">{currentUser?.stats?.followers ?? "-"}</div>
-                <div className="muted">{t("home.followers")}</div>
-              </div>
-              <div className="stat statClickable" onClick={() => setShowFollowing("following")}>
-                <div className="statNum">{currentUser?.stats?.following ?? "-"}</div>
-                <div className="muted">{t("home.following")}</div>
-              </div>
-            </div>
-            <button className="btn btnWide" onClick={() => router.push("/profile")} type="button">
-              {t("home.edit_profile")}
-            </button>
-          </Card>
-
+          <ProfileCard />
           <LeftSidebar />
         </aside>
 
@@ -586,8 +560,6 @@ export default function Home() {
 
       <footer className="footer muted">miniSocial</footer>
     </div>
-    {showFollowing && <FollowingModal type={showFollowing} onClose={() => setShowFollowing(null)} />}
-
-    </>
+</>
   );
 }
