@@ -110,9 +110,9 @@ export class PostsService {
   }
 
   async create(authorId: number, content: string, fileId?: number) {
-    const trimmed = content?.trim();
-    if (!trimmed) {
-      throw new BadRequestException('Content cannot be empty');
+    const trimmed = content?.trim() ?? '';
+    if (!trimmed && typeof fileId === 'undefined') {
+      throw new BadRequestException('Post must have content or an attachment');
     }
     if (trimmed.length > 500) {
       throw new BadRequestException('Content must be 500 characters or fewer');

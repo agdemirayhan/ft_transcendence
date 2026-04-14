@@ -4,14 +4,14 @@ import Avatar from "@/components/Avatar";
 import Topbar from "@/components/Topbar";
 import LeftSidebar from "@/components/LeftSidebar";
 import RightSidebar from "@/components/RightSidebar";
+import ProfileCard from "@/components/ProfileCard";
 import React, { useState, useEffect, useLayoutEffect, useRef } from "react";
 import { HeartIcon as HeartSolid } from "@heroicons/react/24/solid";
-import { PaperClipIcon } from "@heroicons/react/24/outline";
+import { PaperClipIcon, PhotoIcon } from "@heroicons/react/24/outline";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import "../i18n";
 import Cookies from "js-cookie";
-import Image from "next/image";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
 
@@ -93,7 +93,7 @@ function Card({ title, children }: { title?: string; children: React.ReactNode }
   );
 }
 
-function PostComposer({ onPost, username }: { onPost: (content: string, attachment?: File | null) => Promise<void>; username: string }) {
+function PostComposer({ onPost, username }: { onPost: (content: string, attachment?: File | null) => Promise<boolean>; username: string }) {
   const [text, setText] = useState("");
   const [attachment, setAttachment] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -102,12 +102,14 @@ function PostComposer({ onPost, username }: { onPost: (content: string, attachme
   async function submit(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
     const trimmed = text.trim();
-    if (!trimmed) return;
+    if (!trimmed && !attachment) return;
     setIsLoading(true);
     try {
-      await onPost(trimmed, attachment);
-      setText("");
-      setAttachment(null);
+      const ok = await onPost(trimmed, attachment);
+      if (ok) {
+        setText("");
+        setAttachment(null);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -179,7 +181,22 @@ function Post({
   const [loadingComments, setLoadingComments] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [isLong, setIsLong] = useState(false);
+  const [isResizing, setIsResizing] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
+  const resizeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    function handleResize() {
+      setIsResizing(true);
+      if (resizeTimer.current) clearTimeout(resizeTimer.current);
+      resizeTimer.current = setTimeout(() => setIsResizing(false), 200);
+    }
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      if (resizeTimer.current) clearTimeout(resizeTimer.current);
+    };
+  }, []);
 
   useLayoutEffect(() => {
     if (!contentRef.current) return;
@@ -243,17 +260,24 @@ function Post({
           {post.content}
         </div>
         {post.files.length > 0 ? (
-          <div style={{ marginTop: 10, display: "grid", gap: 8 }}>
+          <div style={{ marginTop: 10, display: "grid", gap: 8, marginRight: 22, marginBottom: 10 }}>
             {post.files.map((file) => (
-              <Image
-                key={file.id}
-                src={`${API_URL}${file.url}`}
-                alt={file.filename}
-                width={1200}
-                height={900}
-                style={{ width: "100%", borderRadius: 12, border: "1px solid var(--border)" }}
-                unoptimized
-              />
+              isResizing ? (
+                <div
+                  key={file.id}
+                  style={{ width: "100%", aspectRatio: "16/9", borderRadius: 12, background: "var(--panel2)", border: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "center" }}
+                >
+                  <PhotoIcon style={{ width: 48, height: 48, color: "var(--muted)", opacity: 0.5 }} />
+                </div>
+              ) : (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  key={file.id}
+                  src={`${API_URL}${file.url}`}
+                  alt={file.filename}
+                  style={{ width: "100%", height: "auto", display: "block", borderRadius: 12, border: "1px solid var(--border)" }}
+                />
+              )
             ))}
           </div>
         ) : null}
@@ -380,25 +404,6 @@ function FollowingModal({ type, onClose }: { type: "following" | "followers"; on
   );
 }
 
-function LogoutModal({ onConfirm, onCancel }: { onConfirm: () => void; onCancel: () => void }) {
-  useEffect(() => {
-    document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = ""; };
-  }, []);
-
-  return (
-    <div className="modalOverlay" style={{ backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)" }} onClick={onCancel}>
-      <div className="modal" style={{ maxWidth: 420 }} onClick={(e) => e.stopPropagation()}>
-        <h2>Log out</h2>
-        <p className="muted">Are you sure you want to log out?</p>
-        <div className="modalActions">
-          <button type="button" className="ghostBtn" onClick={onCancel}>Cancel</button>
-          <button type="button" className="btn" onClick={onConfirm}>Log out</button>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 type UserProfile = {
   id: number;
@@ -411,10 +416,9 @@ export default function Home() {
   const router = useRouter();
   const { t } = useTranslation();
   const [posts, setPosts] = useState<PostType[]>([]);
-  const [showLogout, setShowLogout] = useState(false);
-  const [authChecked] = useState(() => Boolean(Cookies.get("token")));
+
+  const [authChecked, setAuthChecked] = useState(false);
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
-  const [showFollowing, setShowFollowing] = useState<"following" | "followers" | null>(null);
 
   useEffect(() => {
     const token = Cookies.get("token");
@@ -422,7 +426,7 @@ export default function Home() {
       router.push("/");
       return;
     }
-
+    setAuthChecked(true);
     fetch(`${API_URL}/auth/me`, { headers: authHeaders() })
       .then((r) => r.json())
       .then((data) => setCurrentUser(data))
@@ -439,7 +443,7 @@ export default function Home() {
 
   }, [router]);
 
-  async function addPost(content: string, attachment?: File | null) {
+  async function addPost(content: string, attachment?: File | null): Promise<boolean> {
     try {
       let fileId: number | undefined;
 
@@ -453,9 +457,7 @@ export default function Home() {
           body: formData,
         });
 
-        if (!uploadRes.ok) {
-          return;
-        }
+        if (!uploadRes.ok) return false;
 
         const uploaded = await uploadRes.json();
         if (typeof uploaded?.id === "number") {
@@ -468,12 +470,14 @@ export default function Home() {
         headers: authHeaders(),
         body: JSON.stringify({ content, fileId }),
       });
-      if (!res.ok) return;
+      if (!res.ok) return false;
       const data = await res.json();
       setPosts((p) => [mapPost(data), ...p]);
       setCurrentUser((u) => u ? { ...u, stats: { ...u.stats, posts: u.stats.posts + 1 } } : u);
+      return true;
     } catch (e) {
       console.error(e);
+      return false;
     }
   }
 
@@ -524,33 +528,7 @@ export default function Home() {
         <aside className="volume" />
 
         <aside className="left">
-          <Card title={t("home.profile")}>
-            <div className="profile">
-              <Avatar name={currentUser?.username ?? "?"} />
-              <div>
-                <div className="profileName" style={{ cursor: "pointer" }} onClick={() => currentUser && router.push(`/profile/${currentUser.id}`)}>{currentUser?.username ?? "..."}</div>
-                <div className="muted">@{currentUser?.username ?? "..."}</div>
-              </div>
-            </div>
-            <div className="stats">
-              <div className="stat statClickable" onClick={() => currentUser && router.push(`/profile/${currentUser.id}`)}>
-                <div className="statNum">{currentUser?.stats?.posts ?? "-"}</div>
-                <div className="muted">{t("home.posts")}</div>
-              </div>
-              <div className="stat statClickable" onClick={() => setShowFollowing("followers")}>
-                <div className="statNum">{currentUser?.stats?.followers ?? "-"}</div>
-                <div className="muted">{t("home.followers")}</div>
-              </div>
-              <div className="stat statClickable" onClick={() => setShowFollowing("following")}>
-                <div className="statNum">{currentUser?.stats?.following ?? "-"}</div>
-                <div className="muted">{t("home.following")}</div>
-              </div>
-            </div>
-            <button className="btn btnWide" onClick={() => router.push("/profile")} type="button">
-              {t("home.edit_profile")}
-            </button>
-          </Card>
-
+          <ProfileCard />
           <LeftSidebar />
         </aside>
 
@@ -574,7 +552,7 @@ export default function Home() {
         </section>
 
         <aside className="right">
-          <RightSidebar />
+          <RightSidebar onFollow={() => setCurrentUser((u) => u ? { ...u, stats: { ...u.stats, following: u.stats.following + 1 } } : u)} />
         </aside>
 
         <aside className="volume" />
@@ -582,17 +560,6 @@ export default function Home() {
 
       <footer className="footer muted">miniSocial</footer>
     </div>
-    {showFollowing && <FollowingModal type={showFollowing} onClose={() => setShowFollowing(null)} />}
-    {showLogout && (
-      <LogoutModal
-        onConfirm={() => {
-          Cookies.remove("token");
-          setShowLogout(false);
-          router.push("/");
-        }}
-        onCancel={() => setShowLogout(false)}
-      />
-    )}
-    </>
+</>
   );
 }

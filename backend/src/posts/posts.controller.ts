@@ -43,7 +43,7 @@ export class PostsController {
   @UseGuards(JwtAuthGuard)
   @Post()
   async create(@Request() req: JwtRequest, @Body() body: CreatePostDto) {
-    return this.postsService.create(req.user.id, body.content, body.fileId);
+    return this.postsService.create(req.user.id, body.content ?? '', body.fileId);
   }
 
   @Get(':id')

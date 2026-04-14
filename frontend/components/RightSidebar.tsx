@@ -19,7 +19,7 @@ function authHeaders(): HeadersInit {
 
 type Suggestion = { id: number; username: string; followers: number; isFollowing: boolean };
 
-export default function RightSidebar() {
+export default function RightSidebar({ onFollow }: { onFollow?: () => void }) {
   const router = useRouter();
   const { t } = useTranslation();
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
@@ -37,6 +37,7 @@ export default function RightSidebar() {
       const res = await fetch(`${API_URL}/users/${userId}/follow`, { method: "POST", headers: authHeaders() });
       const data = await res.json();
       if (typeof data.isFollowing !== "boolean") return;
+      if (data.isFollowing) onFollow?.();
       setFadingIds((prev) => new Set(prev).add(userId));
       setTimeout(() => {
         setSuggestions((prev) => prev.filter((s) => s.id !== userId));
