@@ -1,12 +1,10 @@
 "use client";
 
-import Avatar from "@/components/Avatar";
 import Topbar from "@/components/Topbar";
 import LeftSidebar from "@/components/LeftSidebar";
 import RightSidebar from "@/components/RightSidebar";
-import { useState, useEffect, useLayoutEffect, useRef } from "react";
-import { createPortal } from "react-dom";
-import { HeartIcon as HeartSolid } from "@heroicons/react/24/solid";
+import Post, { PostType } from "@/components/Post";
+import { useState, useEffect, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Cookies from "js-cookie";
 import { useTranslation } from "react-i18next";
@@ -19,16 +17,6 @@ type UserProfile = {
   username: string;
   bio: string | null;
   stats: { posts: number; followers: number; following: number };
-};
-
-type PostType = {
-  id: number;
-  author: string;
-  handle: string;
-  time: string;
-  content: string;
-  likes: number;
-  liked: boolean;
 };
 
 function timeAgo(dateStr: string): string {
@@ -45,232 +33,6 @@ function authHeaders(): HeadersInit {
     "Content-Type": "application/json",
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
-}
-
-function Post({ post, isOwn, onToggleLike, onDelete }: { post: PostType; isOwn: boolean; onToggleLike: (id: number) => void; onDelete?: (id: number) => void }) {
-  const { t } = useTranslation();
-  const [expanded, setExpanded] = useState(false);
-  const [isLong, setIsLong] = useState(false);
-  const contentRef = useRef<HTMLDivElement>(null);
-  const menuBtnRef = useRef<HTMLButtonElement>(null);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [menuPos, setMenuPos] = useState({ top: 0, right: 0 });
-  const [showCommentBox, setShowCommentBox] = useState(false);
-  const [commentText, setCommentText] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [commentCount, setCommentCount] = useState(0);
-  const [showComments, setShowComments] = useState(false);
-  const [commentsList, setCommentsList] = useState<{ id: number; author: { username: string }; content: string; createdAt: string }[]>([]);
-  const [loadingComments, setLoadingComments] = useState(false);
-
-  useLayoutEffect(() => {
-    if (!contentRef.current) return;
-    const el = contentRef.current;
-    const lineHeight = parseFloat(getComputedStyle(el).lineHeight) || 23;
-    if (el.scrollHeight > Math.ceil(lineHeight) + 2) setIsLong(true);
-  }, []);
-
-  useEffect(() => {
-    if (!menuOpen) return;
-    function close() { setMenuOpen(false); }
-    document.addEventListener("mousedown", close);
-    window.addEventListener("scroll", close, true);
-    window.addEventListener("keydown", close, true);
-    return () => {
-      document.removeEventListener("mousedown", close);
-      window.removeEventListener("scroll", close, true);
-      window.removeEventListener("keydown", close, true);
-    };
-  }, [menuOpen]);
-
-  function openMenu() {
-    if (menuBtnRef.current) {
-      const rect = menuBtnRef.current.getBoundingClientRect();
-      setMenuPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
-    }
-    setMenuOpen((v) => !v);
-  }
-
-  async function toggleComments() {
-    if (showComments) { setShowComments(false); return; }
-    setShowComments(true);
-    if (commentsList.length > 0) return;
-    setLoadingComments(true);
-    try {
-      const res = await fetch(`${API_URL}/posts/${post.id}/comments`, { headers: authHeaders() });
-      const data = await res.json();
-      if (Array.isArray(data)) setCommentsList(data);
-    } finally {
-      setLoadingComments(false);
-    }
-  }
-
-  async function submitComment() {
-    const trimmed = commentText.trim();
-    if (!trimmed || isSubmitting) return;
-    setIsSubmitting(true);
-    try {
-      const res = await fetch(`${API_URL}/posts/${post.id}/comments`, {
-        method: "POST",
-        headers: authHeaders(),
-        body: JSON.stringify({ content: trimmed }),
-      });
-      const newComment = await res.json();
-      setCommentCount((c) => c + 1);
-      setCommentsList((prev) => [newComment, ...prev]);
-      setShowComments(true);
-      setCommentText("");
-      setShowCommentBox(false);
-    } finally {
-      setIsSubmitting(false);
-    }
-  }
-
-  return (
-    <div className="post">
-      <Avatar name={post.author} />
-      <div className="postBody">
-        <div className="postHeader">
-          <div className="postAuthor">
-            <span className="name">{post.author}</span>
-            <span className="handle">{post.handle}</span>
-            <span className="dot">•</span>
-            <span className="time">{post.time}</span>
-          </div>
-          <div style={{ marginLeft: "auto" }}>
-            <button
-              ref={menuBtnRef}
-              type="button"
-              className="ghostBtn"
-              style={{ padding: "2px 8px", fontSize: 18, lineHeight: 1 }}
-              onClick={(e) => { e.stopPropagation(); e.currentTarget.blur(); openMenu(); }}
-              aria-label="Post options"
-            >
-              •••
-            </button>
-            {menuOpen && createPortal(
-              <div
-                onMouseDown={(e) => e.stopPropagation()}
-                style={{
-                  position: "fixed", top: menuPos.top, right: menuPos.right,
-                  background: "var(--bg)", border: "1px solid var(--border)",
-                  borderRadius: 10, minWidth: 140, boxShadow: "0 4px 16px rgba(0,0,0,0.5)",
-                  zIndex: 9999, overflow: "hidden",
-                }}>
-                {isOwn ? (
-                  <>
-                    <button
-                      type="button"
-                      style={{ display: "block", width: "100%", padding: "11px 16px", textAlign: "left", background: "none", border: "none", cursor: "pointer", fontSize: 14, color: "#fff" }}
-                      onClick={() => { setMenuOpen(false); alert("Edit coming soon"); }}
-                    >
-                      {t("post.edit")}
-                    </button>
-                    <div style={{ height: 1, background: "var(--border)" }} />
-                    <button
-                      type="button"
-                      style={{ display: "block", width: "100%", padding: "11px 16px", textAlign: "left", background: "none", border: "none", cursor: "pointer", fontSize: 14, color: "var(--danger, #e0245e)" }}
-                      onClick={() => { setMenuOpen(false); onDelete?.(post.id); }}
-                    >
-                      {t("post.delete")}
-                    </button>
-                  </>
-                ) : (
-                  <button
-                    type="button"
-                    style={{ display: "block", width: "100%", padding: "11px 16px", textAlign: "left", background: "none", border: "none", cursor: "pointer", fontSize: 14, color: "#fff" }}
-                    onClick={() => { setMenuOpen(false); alert(t("post.report_soon")); }}
-                  >
-                    {t("post.report")}
-                  </button>
-                )}
-              </div>,
-              document.body
-            )}
-          </div>
-        </div>
-        <div
-          ref={contentRef}
-          className="postContent"
-          style={isLong && !expanded ? { whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", paddingRight: "20px" } : { paddingRight: "20px" }}
-        >
-          {post.content}
-        </div>
-        <div className="postActions">
-          <div style={{ flex: 1, display: "flex", gap: 8, alignItems: "center" }}>
-            <button
-              className={`iconBtn ${post.liked ? "liked" : ""}`}
-              onClick={() => onToggleLike(post.id)}
-              aria-label="Like"
-              type="button"
-            >
-              <HeartSolid className={`icon ${post.liked ? "liked" : ""}`} />
-            </button>
-            <span className="muted">{post.likes}</span>
-            {commentCount > 0 ? <span className="commentCount" onClick={toggleComments}>{commentCount} {t("home.comments")}</span> : null}
-          </div>
-          <div style={{ flex: 1, display: "flex", justifyContent: "center" }}>
-            {isLong && (
-              <button
-                className="ghostBtn"
-                style={{ fontSize: 13, padding: "2px 10px" }}
-                onClick={() => setExpanded((v) => !v)}
-                type="button"
-              >
-                {expanded ? t("home.show_less") : t("home.show_more")}
-              </button>
-            )}
-          </div>
-          <div style={{ flex: 1, display: "flex", gap: 8, justifyContent: "flex-end", alignItems: "center" }}>
-            <button className="btn btnSmall" onClick={() => setShowCommentBox((v) => !v)} type="button">
-              {t("home.comment")}
-            </button>
-            <button className="ghostBtn" onClick={() => alert("We'll add this later 🙂")} type="button">
-              {t("home.share")}
-            </button>
-          </div>
-        </div>
-        {showCommentBox ? (
-          <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-            <input
-              className="authInput"
-              style={{ flex: 1, padding: "8px 12px" }}
-              placeholder={t("home.write_comment")}
-              value={commentText}
-              onChange={(e) => setCommentText(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter") submitComment(); }}
-              autoFocus
-            />
-            <button
-              className="btn"
-              type="button"
-              onClick={submitComment}
-              disabled={!commentText.trim() || isSubmitting}
-            >
-              {t("home.send")}
-            </button>
-          </div>
-        ) : null}
-      </div>
-      {showComments ? (
-        <div className="commentsList">
-          {loadingComments ? <p className="muted">Loading...</p> : null}
-          {commentsList.map((c) => (
-            <div key={c.id} className="commentItem">
-              <Avatar name={c.author.username} size={38} />
-              <div style={{ fontSize: 15 }}>
-                <div style={{ display: "flex", gap: 6, alignItems: "baseline" }}>
-                  <span className="name">{c.author.username}</span>
-                  <span className="muted" style={{ fontSize: 11 }}>{timeAgo(c.createdAt)}</span>
-                </div>
-                <p style={{ margin: 0 }}>{c.content}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : null}
-    </div>
-  );
 }
 
 export default function UserProfilePage() {
@@ -329,6 +91,7 @@ export default function UserProfilePage() {
         if (Array.isArray(data)) {
           setPosts(data.map((p) => ({
             id: p.id,
+            authorId: p.author.id,
             author: p.author.username,
             handle: `@${p.author.username}`,
             time: timeAgo(p.createdAt),

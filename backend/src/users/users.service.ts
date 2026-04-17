@@ -13,7 +13,7 @@ export class UsersService {
         id: true,
         content: true,
         createdAt: true,
-        author: { select: { username: true } },
+        author: { select: { id: true, username: true } },
         _count: { select: { likes: true } },
       },
     });
