@@ -5,38 +5,15 @@ import Topbar from "@/components/Topbar";
 import LeftSidebar from "@/components/LeftSidebar";
 import RightSidebar from "@/components/RightSidebar";
 import ProfileCard from "@/components/ProfileCard";
-import React, { useState, useEffect, useLayoutEffect, useRef } from "react";
-import { HeartIcon as HeartSolid } from "@heroicons/react/24/solid";
-import { PaperClipIcon, PhotoIcon } from "@heroicons/react/24/outline";
+import Post, { PostType } from "@/components/Post";
+import React, { useState, useEffect } from "react";
+import { PaperClipIcon } from "@heroicons/react/24/outline";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import "../i18n";
 import Cookies from "js-cookie";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
-
-type PostType = {
-  id: number;
-  authorId: number;
-  author: string;
-  handle: string;
-  time: string;
-  //author: {
-  //  id: number;
-  //  username: string;
-  //  avatarUrl: string;
-  //};
-  content: string;
-  files: Array<{
-    id: number;
-    filename: string;
-    url: string;
-  }>;
-  likes: number;
-  comments: number;
-  liked: boolean;
-  createdAt: string;
-};
 
 function timeAgo(dateStr: string): string {
   const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
@@ -163,201 +140,6 @@ function PostComposer({ onPost, username }: { onPost: (content: string, attachme
   );
 }
 
-function Post({
-  post,
-  onToggleLike,
-}: {
-  post: PostType;
-  onToggleLike: (id: number) => void;
-}) {
-  const { t } = useTranslation();
-  const router = useRouter();
-  const [showCommentBox, setShowCommentBox] = useState(false);
-  const [commentText, setCommentText] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [commentCount, setCommentCount] = useState(post.comments ?? 0);
-  const [showComments, setShowComments] = useState(false);
-  const [commentsList, setCommentsList] = useState<{ id: number; author: { username: string }; content: string; createdAt: string }[]>([]);
-  const [loadingComments, setLoadingComments] = useState(false);
-  const [expanded, setExpanded] = useState(false);
-  const [isLong, setIsLong] = useState(false);
-  const [isResizing, setIsResizing] = useState(false);
-  const contentRef = useRef<HTMLDivElement>(null);
-  const resizeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    function handleResize() {
-      setIsResizing(true);
-      if (resizeTimer.current) clearTimeout(resizeTimer.current);
-      resizeTimer.current = setTimeout(() => setIsResizing(false), 200);
-    }
-    window.addEventListener("resize", handleResize);
-    return () => {
-      window.removeEventListener("resize", handleResize);
-      if (resizeTimer.current) clearTimeout(resizeTimer.current);
-    };
-  }, []);
-
-  useLayoutEffect(() => {
-    if (!contentRef.current) return;
-    const el = contentRef.current;
-    const lineHeight = parseFloat(getComputedStyle(el).lineHeight) || 23;
-    if (el.scrollHeight > Math.ceil(lineHeight) + 2) setIsLong(true);
-  }, []);
-
-  async function toggleComments() {
-    if (showComments) { setShowComments(false); return; }
-    setShowComments(true);
-    if (commentsList.length > 0) return;
-    setLoadingComments(true);
-    try {
-      const res = await fetch(`${API_URL}/posts/${post.id}/comments`, { headers: authHeaders() });
-      const data = await res.json();
-      if (Array.isArray(data)) setCommentsList(data);
-    } finally {
-      setLoadingComments(false);
-    }
-  }
-
-  async function submitComment() {
-    const trimmed = commentText.trim();
-    if (!trimmed || isSubmitting) return;
-    setIsSubmitting(true);
-    try {
-      const res = await fetch(`${API_URL}/posts/${post.id}/comments`, {
-        method: "POST",
-        headers: authHeaders(),
-        body: JSON.stringify({ content: trimmed }),
-      });
-      const newComment = await res.json();
-      setCommentCount((c) => c + 1);
-      setCommentsList((prev) => [newComment, ...prev]);
-      setShowComments(true);
-      setCommentText("");
-      setShowCommentBox(false);
-    } finally {
-      setIsSubmitting(false);
-    }
-  }
-
-  return (
-    <div className="post">
-      <Avatar name={post.author} />
-      <div className="postBody">
-        <div className="postHeader">
-          <div className="postAuthor">
-            <span className="name" onClick={() => router.push(`/profile/${post.authorId}`)}>{post.author}</span>
-            <span className="handle">{post.handle}</span>
-            <span className="dot">•</span>
-            <span className="time">{post.time}</span>
-          </div>
-        </div>
-        <div
-          ref={contentRef}
-          className="postContent"
-          style={isLong && !expanded ? { whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", paddingRight: "20px" } : { paddingRight: "20px" }}
-        >
-          {post.content}
-        </div>
-        {post.files.length > 0 ? (
-          <div style={{ marginTop: 10, display: "grid", gap: 8, marginRight: 22, marginBottom: 10 }}>
-            {post.files.map((file) => (
-              isResizing ? (
-                <div
-                  key={file.id}
-                  style={{ width: "100%", aspectRatio: "16/9", borderRadius: 12, background: "var(--panel2)", border: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "center" }}
-                >
-                  <PhotoIcon style={{ width: 48, height: 48, color: "var(--muted)", opacity: 0.5 }} />
-                </div>
-              ) : (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  key={file.id}
-                  src={`${API_URL}${file.url}`}
-                  alt={file.filename}
-                  style={{ width: "100%", height: "auto", display: "block", borderRadius: 12, border: "1px solid var(--border)" }}
-                />
-              )
-            ))}
-          </div>
-        ) : null}
-        <div className="postActions">
-          <div style={{ flex: 1, display: "flex", gap: 8, alignItems: "center" }}>
-            <button
-              className={`iconBtn ${post.liked ? "liked" : ""}`}
-              onClick={() => onToggleLike(post.id)}
-              aria-label="Like"
-              type="button"
-            >
-              <HeartSolid className={`icon ${post.liked ? "liked" : ""}`} />
-            </button>
-            <span className="muted">{post.likes}</span>
-            {commentCount > 0 ? <span className="commentCount" onClick={toggleComments}>{commentCount} {t("home.comments")}</span> : null}
-          </div>
-          <div style={{ flex: 1, display: "flex", justifyContent: "center" }}>
-            {isLong && (
-              <button
-                className="ghostBtn"
-                style={{ fontSize: 13, padding: "2px 10px" }}
-                onClick={() => setExpanded((v) => !v)}
-                type="button"
-              >
-                {expanded ? t("home.show_less") : t("home.show_more")}
-              </button>
-            )}
-          </div>
-          <div style={{ flex: 1, display: "flex", gap: 8, justifyContent: "flex-end", alignItems: "center" }}>
-            <button className="btn btnSmall" onClick={() => setShowCommentBox((v) => !v)} type="button">
-              {t("home.comment")}
-            </button>
-            <button className="ghostBtn" onClick={() => alert("We'll add this later 🙂")} type="button">
-              {t("home.share")}
-            </button>
-          </div>
-        </div>
-        {showCommentBox ? (
-          <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-            <input
-              className="authInput"
-              style={{ flex: 1, padding: "8px 12px" }}
-              placeholder={t("home.write_comment")}
-              value={commentText}
-              onChange={(e) => setCommentText(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter") submitComment(); }}
-              autoFocus
-            />
-            <button
-              className="btn"
-              type="button"
-              onClick={submitComment}
-              disabled={!commentText.trim() || isSubmitting}
-            >
-              {t("home.send")}
-            </button>
-          </div>
-        ) : null}
-      </div>
-      {showComments ? (
-        <div className="commentsList">
-          {loadingComments ? <p className="muted">Loading...</p> : null}
-          {commentsList.map((c) => (
-            <div key={c.id} className="commentItem">
-              <Avatar name={c.author.username} size={38} />
-              <div style={{ fontSize: 15 }}>
-                <div style={{ display: "flex", gap: 6, alignItems: "baseline" }}>
-                  <span className="name">{c.author.username}</span>
-                  <span className="muted" style={{ fontSize: 11 }}>{timeAgo(c.createdAt)}</span>
-                </div>
-                <p style={{ margin: 0 }}>{c.content}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
 type FollowUser = { id: number; username: string; followers: number };
 
 function FollowingModal({ type, onClose }: { type: "following" | "followers"; onClose: () => void }) {
@@ -481,6 +263,16 @@ export default function Home() {
     }
   }
 
+  async function deletePost(id: number) {
+    try {
+      await fetch(`${API_URL}/posts/${id}`, { method: "DELETE", headers: authHeaders() });
+      setPosts((p) => p.filter((post) => post.id !== id));
+      setCurrentUser((u) => u ? { ...u, stats: { ...u.stats, posts: Math.max(0, u.stats.posts - 1) } } : u);
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
   async function toggleLike(id: number) {
     setPosts((p) =>
       p.map((post) => {
@@ -544,7 +336,7 @@ export default function Home() {
 ) : (
   posts.map((p) => (
     <Card key={p.id}>
-      <Post post={p} onToggleLike={toggleLike} />
+      <Post post={p} isOwn={currentUser?.id === p.authorId} onToggleLike={toggleLike} onDelete={deletePost} onAuthorClick={(id) => router.push(`/profile/${id}`)} />
     </Card>
   ))
 )}

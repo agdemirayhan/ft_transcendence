@@ -13,7 +13,7 @@ export class UsersService {
         id: true,
         content: true,
         createdAt: true,
-        author: { select: { username: true } },
+        author: { select: { id: true, username: true } },
         _count: { select: { likes: true } },
       },
     });
@@ -58,6 +58,15 @@ export class UsersService {
         following: user._count.following,
       },
     };
+  }
+
+  async updateBio(userId: number, bio: string) {
+    const updated = await this.prisma.user.update({
+      where: { id: userId },
+      data: { bio: bio.trim() || null },
+      select: { id: true, bio: true },
+    });
+    return updated;
   }
 
   async searchUsers(query: string, currentUserId: number) {

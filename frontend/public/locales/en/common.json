@@ -35,7 +35,11 @@
     "followers": "Followers",
     "following": "Following",
     "no_posts": "No posts yet.",
-    "edit_soon": "Edit profile will be added soon"
+    "edit_soon": "Edit profile will be added soon",
+    "change_pic": "Change Profile Picture",
+    "edit_bio": "Edit Bio",
+    "save": "Save",
+    "cancel": "Cancel"
   },
   "messages": {
     "title": "Messages",
@@ -76,6 +80,12 @@
     "just_now": "just now",
     "show_more": "Show more",
     "show_less": "Show less"
+  },
+  "post": {
+    "edit": "Edit",
+    "delete": "Delete",
+    "report": "Report",
+    "report_soon": "Report is not functional yet."
   },
   "search": {
     "back": "← Back",

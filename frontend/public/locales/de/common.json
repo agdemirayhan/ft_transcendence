@@ -35,7 +35,11 @@
     "followers": "Follower",
     "following": "Gefolgt",
     "no_posts": "Noch keine Beiträge.",
-    "edit_soon": "Profil bearbeiten wird bald hinzugefügt"
+    "edit_soon": "Profil bearbeiten wird bald hinzugefügt",
+    "change_pic": "Profilbild ändern",
+    "edit_bio": "Bio bearbeiten",
+    "save": "Speichern",
+    "cancel": "Abbrechen"
   },
   "messages": {
     "title": "Nachrichten",
@@ -76,6 +80,12 @@
     "just_now": "gerade eben",
     "show_more": "Mehr anzeigen",
     "show_less": "Weniger anzeigen"
+  },
+  "post": {
+    "edit": "Bearbeiten",
+    "delete": "Löschen",
+    "report": "Melden",
+    "report_soon": "Die Meldefunktion ist noch nicht aktiv."
   },
   "search": {
     "back": "← Zurück",
