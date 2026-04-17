@@ -81,6 +81,11 @@
     "show_more": "Devamını gör",
     "show_less": "Daha az göster"
   },
+  "post": {
+    "edit": "Düzenle",
+    "delete": "Sil",
+    "report": "Şikayet Et"
+  },
   "search": {
     "back": "← Geri",
     "loading": "Aranıyor...",

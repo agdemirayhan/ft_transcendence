@@ -5,6 +5,7 @@ import Topbar from "@/components/Topbar";
 import LeftSidebar from "@/components/LeftSidebar";
 import RightSidebar from "@/components/RightSidebar";
 import { useState, useEffect, useLayoutEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { HeartIcon as HeartSolid } from "@heroicons/react/24/solid";
 import { useRouter, useParams } from "next/navigation";
 import Cookies from "js-cookie";
@@ -46,11 +47,14 @@ function authHeaders(): HeadersInit {
   };
 }
 
-function Post({ post, onToggleLike }: { post: PostType; onToggleLike: (id: number) => void }) {
+function Post({ post, isOwn, onToggleLike, onDelete }: { post: PostType; isOwn: boolean; onToggleLike: (id: number) => void; onDelete?: (id: number) => void }) {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   const [isLong, setIsLong] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
+  const menuBtnRef = useRef<HTMLButtonElement>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [menuPos, setMenuPos] = useState({ top: 0, right: 0 });
   const [showCommentBox, setShowCommentBox] = useState(false);
   const [commentText, setCommentText] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -65,6 +69,21 @@ function Post({ post, onToggleLike }: { post: PostType; onToggleLike: (id: numbe
     const lineHeight = parseFloat(getComputedStyle(el).lineHeight) || 23;
     if (el.scrollHeight > Math.ceil(lineHeight) + 2) setIsLong(true);
   }, []);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    function handleClick() { setMenuOpen(false); }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [menuOpen]);
+
+  function openMenu() {
+    if (menuBtnRef.current) {
+      const rect = menuBtnRef.current.getBoundingClientRect();
+      setMenuPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+    }
+    setMenuOpen((v) => !v);
+  }
 
   async function toggleComments() {
     if (showComments) { setShowComments(false); return; }
@@ -111,6 +130,57 @@ function Post({ post, onToggleLike }: { post: PostType; onToggleLike: (id: numbe
             <span className="handle">{post.handle}</span>
             <span className="dot">•</span>
             <span className="time">{post.time}</span>
+          </div>
+          <div style={{ marginLeft: "auto" }}>
+            <button
+              ref={menuBtnRef}
+              type="button"
+              className="ghostBtn"
+              style={{ padding: "2px 8px", fontSize: 18, lineHeight: 1 }}
+              onClick={(e) => { e.stopPropagation(); openMenu(); }}
+              aria-label="Post options"
+            >
+              •••
+            </button>
+            {menuOpen && createPortal(
+              <div
+                onMouseDown={(e) => e.stopPropagation()}
+                style={{
+                  position: "fixed", top: menuPos.top, right: menuPos.right,
+                  background: "var(--bg)", border: "1px solid var(--border)",
+                  borderRadius: 10, minWidth: 140, boxShadow: "0 4px 16px rgba(0,0,0,0.5)",
+                  zIndex: 9999, overflow: "hidden",
+                }}>
+                {isOwn ? (
+                  <>
+                    <button
+                      type="button"
+                      style={{ display: "block", width: "100%", padding: "11px 16px", textAlign: "left", background: "none", border: "none", cursor: "pointer", fontSize: 14, color: "#fff" }}
+                      onClick={() => { setMenuOpen(false); alert("Edit coming soon"); }}
+                    >
+                      {t("post.edit")}
+                    </button>
+                    <div style={{ height: 1, background: "var(--border)" }} />
+                    <button
+                      type="button"
+                      style={{ display: "block", width: "100%", padding: "11px 16px", textAlign: "left", background: "none", border: "none", cursor: "pointer", fontSize: 14, color: "var(--danger, #e0245e)" }}
+                      onClick={() => { setMenuOpen(false); onDelete?.(post.id); }}
+                    >
+                      {t("post.delete")}
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    style={{ display: "block", width: "100%", padding: "11px 16px", textAlign: "left", background: "none", border: "none", cursor: "pointer", fontSize: 14, color: "#fff" }}
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    {t("post.report")}
+                  </button>
+                )}
+              </div>,
+              document.body
+            )}
           </div>
         </div>
         <div
@@ -319,6 +389,16 @@ export default function UserProfilePage() {
     }
   }
 
+  async function deletePost(postId: number) {
+    try {
+      await fetch(`${API_URL}/posts/${postId}`, { method: "DELETE", headers: authHeaders() });
+      setPosts((p) => p.filter((post) => post.id !== postId));
+      setUser((prev) => prev ? { ...prev, stats: { ...prev.stats, posts: Math.max(0, prev.stats.posts - 1) } } : prev);
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
   async function saveBio() {
     setBioSaving(true);
     try {
@@ -369,7 +449,7 @@ export default function UserProfilePage() {
                     position: "absolute",
                     top: "calc(100% + 6px)",
                     right: 0,
-                    background: "var(--card)",
+                    background: "var(--bg)",
                     border: "1px solid var(--border)",
                     borderRadius: 10,
                     minWidth: 180,
@@ -460,7 +540,7 @@ export default function UserProfilePage() {
             ) : (
               posts.map((p) => (
                 <div className="card" key={p.id}>
-                  <Post post={p} onToggleLike={toggleLike} />
+                  <Post post={p} isOwn={isOwnProfile === true} onToggleLike={toggleLike} onDelete={isOwnProfile === true ? deletePost : undefined} />
                 </div>
               ))
             )}

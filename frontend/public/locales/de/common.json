@@ -81,6 +81,11 @@
     "show_more": "Mehr anzeigen",
     "show_less": "Weniger anzeigen"
   },
+  "post": {
+    "edit": "Bearbeiten",
+    "delete": "Löschen",
+    "report": "Melden"
+  },
   "search": {
     "back": "← Zurück",
     "loading": "Suche läuft...",

@@ -6,6 +6,7 @@ import LeftSidebar from "@/components/LeftSidebar";
 import RightSidebar from "@/components/RightSidebar";
 import ProfileCard from "@/components/ProfileCard";
 import React, { useState, useEffect, useLayoutEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { HeartIcon as HeartSolid } from "@heroicons/react/24/solid";
 import { PaperClipIcon, PhotoIcon } from "@heroicons/react/24/outline";
 import { useRouter } from "next/navigation";
@@ -165,10 +166,14 @@ function PostComposer({ onPost, username }: { onPost: (content: string, attachme
 
 function Post({
   post,
+  currentUserId,
   onToggleLike,
+  onDelete,
 }: {
   post: PostType;
+  currentUserId?: number;
   onToggleLike: (id: number) => void;
+  onDelete?: (id: number) => void;
 }) {
   const { t } = useTranslation();
   const router = useRouter();
@@ -182,8 +187,27 @@ function Post({
   const [expanded, setExpanded] = useState(false);
   const [isLong, setIsLong] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [menuPos, setMenuPos] = useState({ top: 0, right: 0 });
+  const menuBtnRef = useRef<HTMLButtonElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const resizeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isOwn = currentUserId !== undefined && currentUserId === post.authorId;
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    function handleClick() { setMenuOpen(false); }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [menuOpen]);
+
+  function openMenu() {
+    if (menuBtnRef.current) {
+      const rect = menuBtnRef.current.getBoundingClientRect();
+      setMenuPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+    }
+    setMenuOpen((v) => !v);
+  }
 
   useEffect(() => {
     function handleResize() {
@@ -250,6 +274,57 @@ function Post({
             <span className="handle">{post.handle}</span>
             <span className="dot">•</span>
             <span className="time">{post.time}</span>
+          </div>
+          <div style={{ marginLeft: "auto" }}>
+            <button
+              ref={menuBtnRef}
+              type="button"
+              className="ghostBtn"
+              style={{ padding: "2px 8px", fontSize: 18, lineHeight: 1 }}
+              onClick={(e) => { e.stopPropagation(); openMenu(); }}
+              aria-label="Post options"
+            >
+              •••
+            </button>
+            {menuOpen && createPortal(
+              <div
+                onMouseDown={(e) => e.stopPropagation()}
+                style={{
+                  position: "fixed", top: menuPos.top, right: menuPos.right,
+                  background: "var(--bg)", border: "1px solid var(--border)",
+                  borderRadius: 10, minWidth: 140, boxShadow: "0 4px 16px rgba(0,0,0,0.5)",
+                  zIndex: 9999, overflow: "hidden",
+                }}>
+                {isOwn ? (
+                  <>
+                    <button
+                      type="button"
+                      style={{ display: "block", width: "100%", padding: "11px 16px", textAlign: "left", background: "none", border: "none", cursor: "pointer", fontSize: 14, color: "#fff" }}
+                      onClick={() => { setMenuOpen(false); alert("Edit coming soon"); }}
+                    >
+                      {t("post.edit")}
+                    </button>
+                    <div style={{ height: 1, background: "var(--border)" }} />
+                    <button
+                      type="button"
+                      style={{ display: "block", width: "100%", padding: "11px 16px", textAlign: "left", background: "none", border: "none", cursor: "pointer", fontSize: 14, color: "var(--danger, #e0245e)" }}
+                      onClick={() => { setMenuOpen(false); onDelete?.(post.id); }}
+                    >
+                      {t("post.delete")}
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    style={{ display: "block", width: "100%", padding: "11px 16px", textAlign: "left", background: "none", border: "none", cursor: "pointer", fontSize: 14, color: "#fff" }}
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    {t("post.report")}
+                  </button>
+                )}
+              </div>,
+              document.body
+            )}
           </div>
         </div>
         <div
@@ -481,6 +556,16 @@ export default function Home() {
     }
   }
 
+  async function deletePost(id: number) {
+    try {
+      await fetch(`${API_URL}/posts/${id}`, { method: "DELETE", headers: authHeaders() });
+      setPosts((p) => p.filter((post) => post.id !== id));
+      setCurrentUser((u) => u ? { ...u, stats: { ...u.stats, posts: Math.max(0, u.stats.posts - 1) } } : u);
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
   async function toggleLike(id: number) {
     setPosts((p) =>
       p.map((post) => {
@@ -544,7 +629,7 @@ export default function Home() {
 ) : (
   posts.map((p) => (
     <Card key={p.id}>
-      <Post post={p} onToggleLike={toggleLike} />
+      <Post post={p} currentUserId={currentUser?.id} onToggleLike={toggleLike} onDelete={deletePost} />
     </Card>
   ))
 )}
