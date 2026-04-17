@@ -60,6 +60,15 @@ export class UsersService {
     };
   }
 
+  async updateBio(userId: number, bio: string) {
+    const updated = await this.prisma.user.update({
+      where: { id: userId },
+      data: { bio: bio.trim() || null },
+      select: { id: true, bio: true },
+    });
+    return updated;
+  }
+
   async searchUsers(query: string, currentUserId: number) {
     const users = await this.prisma.user.findMany({
       where: {

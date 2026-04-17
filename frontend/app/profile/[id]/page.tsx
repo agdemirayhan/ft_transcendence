@@ -208,6 +208,22 @@ export default function UserProfilePage() {
   const [isOwnProfile, setIsOwnProfile] = useState<boolean | null>(null);
   const [isFollowing, setIsFollowing] = useState(false);
   const [followLoading, setFollowLoading] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [editingBio, setEditingBio] = useState(false);
+  const [bioText, setBioText] = useState("");
+  const [bioSaving, setBioSaving] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!dropdownOpen) return;
+    function handleClick(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [dropdownOpen]);
 
   useEffect(() => {
     const token = Cookies.get("token");
@@ -228,7 +244,7 @@ export default function UserProfilePage() {
 
     fetch(`${API_URL}/users/${id}`, { headers: authHeaders() })
       .then((r) => r.json())
-      .then((data) => setUser(data))
+      .then((data) => { setUser(data); setBioText(data.bio ?? ""); })
       .catch(console.error);
 
     fetch(`${API_URL}/users/${id}/posts`, { headers: authHeaders() })
@@ -303,6 +319,24 @@ export default function UserProfilePage() {
     }
   }
 
+  async function saveBio() {
+    setBioSaving(true);
+    try {
+      const res = await fetch(`${API_URL}/users/me/bio`, {
+        method: "PATCH",
+        headers: authHeaders(),
+        body: JSON.stringify({ bio: bioText }),
+      });
+      const data = await res.json();
+      setUser((prev) => prev ? { ...prev, bio: data.bio } : prev);
+      setEditingBio(false);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setBioSaving(false);
+    }
+  }
+
   return (
     <div className="page">
       <Topbar />
@@ -322,9 +356,45 @@ export default function UserProfilePage() {
               {user?.username?.[0]?.toUpperCase() ?? "?"}
             </div>
             {isOwnProfile === true && (
-              <button className="ghostBtn" onClick={() => alert(t("profile.edit_soon"))} type="button">
-                {t("profile.edit_profile")}
-              </button>
+              <div style={{ position: "relative" }} ref={dropdownRef}>
+                <button
+                  className="ghostBtn"
+                  type="button"
+                  onClick={() => setDropdownOpen((v) => !v)}
+                >
+                  {t("profile.edit_profile")}
+                </button>
+                {dropdownOpen && (
+                  <div style={{
+                    position: "absolute",
+                    top: "calc(100% + 6px)",
+                    right: 0,
+                    background: "var(--card)",
+                    border: "1px solid var(--border)",
+                    borderRadius: 10,
+                    minWidth: 180,
+                    boxShadow: "0 4px 16px rgba(0,0,0,0.18)",
+                    zIndex: 100,
+                    overflow: "hidden",
+                  }}>
+                    <button
+                      type="button"
+                      style={{ display: "block", width: "100%", padding: "12px 16px", textAlign: "left", background: "none", border: "none", cursor: "pointer", fontSize: 14, color: "var(--text)" }}
+                      onClick={() => { setDropdownOpen(false); alert(t("profile.edit_soon")); }}
+                    >
+                      {t("profile.change_pic")}
+                    </button>
+                    <div style={{ height: 1, background: "var(--border)" }} />
+                    <button
+                      type="button"
+                      style={{ display: "block", width: "100%", padding: "12px 16px", textAlign: "left", background: "none", border: "none", cursor: "pointer", fontSize: 14, color: "var(--text)" }}
+                      onClick={() => { setDropdownOpen(false); setEditingBio(true); setBioText(user?.bio ?? ""); }}
+                    >
+                      {t("profile.edit_bio")}
+                    </button>
+                  </div>
+                )}
+              </div>
             )}
             {isOwnProfile === false && (
               <button
@@ -341,7 +411,28 @@ export default function UserProfilePage() {
           <div className="profileInfo">
             <div className="profileDisplayName">{user?.username ?? "..."}</div>
             <div className="muted">@{user?.username ?? "..."}</div>
-            {user?.bio && <div className="profileBio">{user.bio}</div>}
+            {editingBio ? (
+              <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 6 }}>
+                <textarea
+                  className="authInput"
+                  style={{ resize: "vertical", minHeight: 64, padding: "8px 12px", fontSize: 14 }}
+                  value={bioText}
+                  onChange={(e) => setBioText(e.target.value)}
+                  maxLength={200}
+                  autoFocus
+                />
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button className="btn btnSmall" type="button" onClick={saveBio} disabled={bioSaving}>
+                    {bioSaving ? "..." : t("profile.save")}
+                  </button>
+                  <button className="ghostBtn" type="button" onClick={() => setEditingBio(false)}>
+                    {t("profile.cancel")}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              user?.bio && <div className="profileBio">{user.bio}</div>
+            )}
           </div>
 
           <div className="stats profileStats">

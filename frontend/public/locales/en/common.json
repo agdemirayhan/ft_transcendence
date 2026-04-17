@@ -35,7 +35,11 @@
     "followers": "Followers",
     "following": "Following",
     "no_posts": "No posts yet.",
-    "edit_soon": "Edit profile will be added soon"
+    "edit_soon": "Edit profile will be added soon",
+    "change_pic": "Change Profile Picture",
+    "edit_bio": "Edit Bio",
+    "save": "Save",
+    "cancel": "Cancel"
   },
   "messages": {
     "title": "Messages",

@@ -35,7 +35,11 @@
     "followers": "Takipçi",
     "following": "Takip",
     "no_posts": "Henüz gönderi yok.",
-    "edit_soon": "Profil düzenleme yakında eklenecek"
+    "edit_soon": "Profil düzenleme yakında eklenecek",
+    "change_pic": "Profil Fotoğrafını Değiştir",
+    "edit_bio": "Bio Düzenle",
+    "save": "Kaydet",
+    "cancel": "İptal"
   },
   "messages": {
     "title": "Mesajlar",

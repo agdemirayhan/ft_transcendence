@@ -8,7 +8,6 @@ import Avatar from "@/components/Avatar";
 import Topbar from "@/components/Topbar";
 import LeftSidebar from "@/components/LeftSidebar";
 import RightSidebar from "@/components/RightSidebar";
-import ProfileCard from "@/components/ProfileCard";
 import "../i18n";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
@@ -92,7 +91,6 @@ function SearchContent() {
         <aside className="volume" />
 
         <aside className="left">
-          <ProfileCard />
           <LeftSidebar />
         </aside>
 

@@ -35,7 +35,11 @@
     "followers": "Follower",
     "following": "Gefolgt",
     "no_posts": "Noch keine Beiträge.",
-    "edit_soon": "Profil bearbeiten wird bald hinzugefügt"
+    "edit_soon": "Profil bearbeiten wird bald hinzugefügt",
+    "change_pic": "Profilbild ändern",
+    "edit_bio": "Bio bearbeiten",
+    "save": "Speichern",
+    "cancel": "Abbrechen"
   },
   "messages": {
     "title": "Nachrichten",
