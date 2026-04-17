@@ -196,9 +196,15 @@ function Post({
 
   useEffect(() => {
     if (!menuOpen) return;
-    function handleClick() { setMenuOpen(false); }
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
+    function close() { setMenuOpen(false); }
+    document.addEventListener("mousedown", close);
+    window.addEventListener("scroll", close, true);
+    window.addEventListener("keydown", close, true);
+    return () => {
+      document.removeEventListener("mousedown", close);
+      window.removeEventListener("scroll", close, true);
+      window.removeEventListener("keydown", close, true);
+    };
   }, [menuOpen]);
 
   function openMenu() {
@@ -281,7 +287,7 @@ function Post({
               type="button"
               className="ghostBtn"
               style={{ padding: "2px 8px", fontSize: 18, lineHeight: 1 }}
-              onClick={(e) => { e.stopPropagation(); openMenu(); }}
+              onClick={(e) => { e.stopPropagation(); e.currentTarget.blur(); openMenu(); }}
               aria-label="Post options"
             >
               •••
@@ -317,7 +323,7 @@ function Post({
                   <button
                     type="button"
                     style={{ display: "block", width: "100%", padding: "11px 16px", textAlign: "left", background: "none", border: "none", cursor: "pointer", fontSize: 14, color: "#fff" }}
-                    onClick={() => setMenuOpen(false)}
+                    onClick={() => { setMenuOpen(false); alert(t("post.report_soon")); }}
                   >
                     {t("post.report")}
                   </button>

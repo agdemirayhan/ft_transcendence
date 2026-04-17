@@ -84,7 +84,8 @@
   "post": {
     "edit": "Edit",
     "delete": "Delete",
-    "report": "Report"
+    "report": "Report",
+    "report_soon": "Report is not functional yet."
   },
   "search": {
     "back": "← Back",

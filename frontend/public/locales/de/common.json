@@ -84,7 +84,8 @@
   "post": {
     "edit": "Bearbeiten",
     "delete": "Löschen",
-    "report": "Melden"
+    "report": "Melden",
+    "report_soon": "Die Meldefunktion ist noch nicht aktiv."
   },
   "search": {
     "back": "← Zurück",

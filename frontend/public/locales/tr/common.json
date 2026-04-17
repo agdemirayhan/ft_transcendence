@@ -84,7 +84,8 @@
   "post": {
     "edit": "Düzenle",
     "delete": "Sil",
-    "report": "Şikayet Et"
+    "report": "Şikayet Et",
+    "report_soon": "Şikayet özelliği henüz aktif değil."
   },
   "search": {
     "back": "← Geri",
