@@ -146,6 +146,29 @@ export class PostsService {
     return posts.map((post) => this.toResponse(post));
   }
 
+  async explore(userId: number) {
+    const following = await this.prisma.follow.findMany({
+      where: { followerId: userId },
+      select: { followingId: true },
+    });
+
+    const excludedIds = [...following.map((f) => f.followingId), userId];
+
+    const posts = await this.prisma.post.findMany({
+      where: {
+        authorId: { notIn: excludedIds },
+      },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        author: { select: { id: true, username: true, avatarUrl: true } },
+        files: { select: { id: true, filename: true, mimetype: true } },
+        _count: { select: { likes: true, comments: true } },
+      },
+    });
+
+    return posts.map((post) => this.toResponse(post));
+  }
+
   async create(authorId: number, content: string, fileId?: number) {
     const trimmed = content?.trim() ?? '';
     if (!trimmed && typeof fileId === 'undefined') {
