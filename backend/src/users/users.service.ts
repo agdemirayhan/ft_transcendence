@@ -1,6 +1,13 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
+const ONLINE_THRESHOLD_MS = 5 * 60 * 1000;
+
+function computeIsOnline(onlineStatus: boolean, lastSeen: Date | null): boolean {
+  if (!onlineStatus || !lastSeen) return false;
+  return Date.now() - lastSeen.getTime() < ONLINE_THRESHOLD_MS;
+}
+
 @Injectable()
 export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
@@ -30,6 +37,8 @@ export class UsersService {
         avatarUrl: true,
         language: true,
         createdAt: true,
+        onlineStatus: true,
+        lastSeen: true,
         _count: {
           select: {
             posts: true,
@@ -52,6 +61,7 @@ export class UsersService {
       avatarUrl: user.avatarUrl,
       language: user.language,
       createdAt: user.createdAt,
+      isOnline: computeIsOnline(user.onlineStatus, user.lastSeen),
       stats: {
         posts: user._count.posts,
         followers: user._count.followers,
@@ -107,6 +117,8 @@ export class UsersService {
       select: {
         id: true,
         username: true,
+        onlineStatus: true,
+        lastSeen: true,
         _count: { select: { followers: true } },
       },
       orderBy: { followers: { _count: 'desc' } },
@@ -118,6 +130,7 @@ export class UsersService {
       username: u.username,
       followers: u._count.followers,
       isFollowing: false,
+      isOnline: computeIsOnline(u.onlineStatus, u.lastSeen),
     }));
   }
 

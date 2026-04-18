@@ -25,6 +25,18 @@ export class AuthController {
     return this.usersService.getProfile(req.user.id);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Post('heartbeat')
+  async heartbeat(@Request() req: any) {
+    return this.authService.heartbeat(req.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('logout')
+  async logout(@Request() req: any) {
+    return this.authService.logout(req.user.id);
+  }
+
   // Neue Endpoints für Chat
   @UseGuards(JwtAuthGuard)
   @Get('users')

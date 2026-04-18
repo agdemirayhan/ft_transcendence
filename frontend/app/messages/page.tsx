@@ -12,6 +12,7 @@ import '../i18n';
 interface ChatUser {
   id: number;
   username: string;
+  isOnline?: boolean;
 }
 
 interface Message {
@@ -42,10 +43,16 @@ export default function MessagesPage() {
   const [userSearch, setUserSearch] = useState('');
   const socketRef = useRef<Socket | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const el = messagesContainerRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
   };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   useEffect(() => {
     fetch(`${API_URL}/auth/me`, { headers: authHeaders() })
@@ -60,17 +67,28 @@ export default function MessagesPage() {
       .then((data) => { if (Array.isArray(data)) setChatUsers(data); });
   }, [currentUserId]);
 
+  const selectedIdRef = useRef<number | null>(null);
+  selectedIdRef.current = selectedId;
+
   useEffect(() => {
-    if (!currentUserId || !selectedId) return;
+    if (!currentUserId) return;
     const token = Cookies.get('token');
     const socket = io(API_URL, { auth: { token } });
     socketRef.current = socket;
 
     socket.on('newMessage', (msg: Message) => {
-      if (msg.senderId === selectedId || msg.receiverId === selectedId) {
+      const active = selectedIdRef.current;
+      if (msg.senderId === active || msg.receiverId === active) {
         setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]));
         scrollToBottom();
       }
+      setChatUsers((prev) => {
+        const exists = prev.find((u) => u.id === msg.senderId);
+        if (!exists && msg.senderId !== currentUserId) {
+          return [{ id: msg.senderId, username: msg.senderId.toString() }, ...prev];
+        }
+        return prev;
+      });
     });
 
     socket.on('messageSent', (msg: Message) => {
@@ -79,21 +97,11 @@ export default function MessagesPage() {
     });
 
     return () => { socket.disconnect(); };
-  }, [currentUserId, selectedId]);
+  }, [currentUserId]);
 
   const sendMessage = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMessage.trim() || !socketRef.current || !currentUserId || !selectedId) return;
-
-    const optimistic: Message = {
-      id: Date.now(),
-      content: newMessage,
-      senderId: currentUserId,
-      receiverId: selectedId,
-      createdAt: new Date().toISOString(),
-    };
-    setMessages((prev) => [...prev, optimistic]);
-    scrollToBottom();
     socketRef.current.emit('sendMessage', { receiverId: selectedId, content: newMessage });
     setNewMessage('');
   };
@@ -243,14 +251,14 @@ export default function MessagesPage() {
                 <div>
                   <div style={{ fontWeight: 800 }}>{selectedUser.username}</div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                    <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--accent2)', display: 'inline-block' }} />
-                    <span className="muted">{t('messages.online')}</span>
+                    <span style={{ width: 7, height: 7, borderRadius: '50%', background: selectedUser.isOnline ? 'var(--accent2)' : 'var(--muted)', display: 'inline-block' }} />
+                    <span className="muted">{selectedUser.isOnline ? t('messages.online') : t('messages.offline')}</span>
                   </div>
                 </div>
               </div>
 
               {/* Messages */}
-              <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px', paddingRight: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div ref={messagesContainerRef} style={{ flex: 1, overflowY: 'auto', padding: '16px 20px', paddingRight: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {messages.map((msg) => {
                   const mine = msg.senderId === currentUserId;
                   return (

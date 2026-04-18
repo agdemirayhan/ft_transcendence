@@ -18,6 +18,7 @@ model User {
   avatarUrl           String?  @default("https://via.placeholder.com/150")
   bio                 String?
   onlineStatus        Boolean  @default(false)
+  lastSeen            DateTime?
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
   language            String   @default("en")

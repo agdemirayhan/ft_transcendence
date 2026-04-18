@@ -51,6 +51,7 @@
     "back": "← Back",
     "loading": "Loading...",
     "online": "online",
+    "offline": "offline",
     "new_message": "New",
     "search_users": "Search users..."
   },
