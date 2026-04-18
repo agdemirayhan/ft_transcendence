@@ -18,17 +18,24 @@ function authHeaders(): HeadersInit {
 }
 
 type Suggestion = { id: number; username: string; followers: number; isFollowing: boolean };
+type TrendingTag = { tag: string; count: number };
 
 export default function RightSidebar({ onFollow }: { onFollow?: () => void }) {
   const router = useRouter();
   const { t } = useTranslation();
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [fadingIds, setFadingIds] = useState<Set<number>>(new Set());
+  const [trendingTags, setTrendingTags] = useState<TrendingTag[]>([]);
 
   useEffect(() => {
     fetch(`${API_URL}/users/suggestions`, { headers: authHeaders() })
       .then((r) => r.json())
       .then((data) => { if (Array.isArray(data)) setSuggestions(data); })
+      .catch(console.error);
+
+    fetch(`${API_URL}/posts/trending-hashtags`, { headers: authHeaders() })
+      .then((r) => r.json())
+      .then((data) => { if (Array.isArray(data)) setTrendingTags(data); })
       .catch(console.error);
   }, []);
 
@@ -53,10 +60,20 @@ export default function RightSidebar({ onFollow }: { onFollow?: () => void }) {
       <div className="card">
         <div className="cardTitle">{t("home.trending")}</div>
         <div className="chips">
-          <span className="chip">#react</span>
-          <span className="chip">#frontend</span>
-          <span className="chip">#42school</span>
-          <span className="chip">#nextjs</span>
+          {trendingTags.length === 0 && (
+            <div className="muted" style={{ fontSize: 13 }}>No trending hashtags yet.</div>
+          )}
+          {trendingTags.map(({ tag, count }) => (
+            <button
+              key={tag}
+              type="button"
+              className="chip chipBtn"
+              onClick={() => router.push(`/search?q=${encodeURIComponent(tag)}`)}
+              title={`${count} post${count !== 1 ? "s" : ""}`}
+            >
+              {tag}
+            </button>
+          ))}
         </div>
       </div>
 

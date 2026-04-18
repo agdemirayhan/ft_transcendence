@@ -469,6 +469,64 @@ button:active {
   font-size: 13px;
   color: rgba(255,255,255,0.86);
 }
+.chipBtn {
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.chipBtn:hover {
+  background: rgba(255,255,255,0.1);
+  border-color: rgba(255,255,255,0.35);
+}
+.chipActive {
+  background: var(--accent, #6366f1) !important;
+  border-color: var(--accent, #6366f1) !important;
+  color: #fff !important;
+}
+.searchSectionLabel {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 12px 4px 6px;
+}
+
+.searchUserCard {
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.searchUserCard:hover {
+  background: rgba(255,255,255,0.04);
+}
+.searchUserCardInner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.searchUserInfo {
+  flex: 1;
+  min-width: 0;
+}
+.searchUserBio {
+  font-size: 14px;
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text);
+}
+
+.hashtagFilterBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  border-radius: 14px;
+  background: rgba(99,102,241,0.12);
+  border: 1px solid rgba(99,102,241,0.3);
+  font-size: 14px;
+  margin-bottom: 8px;
+}
 
 .suggestions { display: grid; gap: 10px; }
 .suggestion {

@@ -43,10 +43,31 @@ export class AuthService {
       };
     }
 
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { onlineStatus: true, lastSeen: new Date() },
+    });
+
     return {
       access_token: this.jwtService.sign(payload),
       user: { id: user.id, email: user.email, username: user.username },
     };
+  }
+
+  async heartbeat(userId: number) {
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { onlineStatus: true, lastSeen: new Date() },
+    });
+    return { ok: true };
+  }
+
+  async logout(userId: number) {
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { onlineStatus: false },
+    });
+    return { ok: true };
   }
 
   async updateLanguage(userId: number, language: string) {
@@ -101,18 +122,45 @@ export class AuthService {
       select: {
         senderId: true,
         receiverId: true,
-        sender: { select: { id: true, username: true } },
-        receiver: { select: { id: true, username: true } },
+        isRead: true,
+        createdAt: true,
+        sender: { select: { id: true, username: true, onlineStatus: true, lastSeen: true } },
+        receiver: { select: { id: true, username: true, onlineStatus: true, lastSeen: true } },
       },
       orderBy: { createdAt: 'desc' },
     });
 
-    const seen = new Map<number, { id: number; username: string }>();
+    const ONLINE_THRESHOLD_MS = 5 * 60 * 1000;
+    const seen = new Map<number, { id: number; username: string; isOnline: boolean; unreadCount: number; lastMessageAt: string }>();
     for (const m of messages) {
       const other = m.senderId === userId ? m.receiver : m.sender;
-      if (!seen.has(other.id)) seen.set(other.id, other);
+      if (!seen.has(other.id)) {
+        const isOnline = other.onlineStatus && other.lastSeen
+          ? Date.now() - new Date(other.lastSeen).getTime() < ONLINE_THRESHOLD_MS
+          : false;
+        seen.set(other.id, { id: other.id, username: other.username, isOnline, unreadCount: 0, lastMessageAt: m.createdAt.toISOString() });
+      }
+      if (m.receiverId === userId && !m.isRead) {
+        const entry = seen.get(other.id)!;
+        entry.unreadCount += 1;
+      }
     }
     return Array.from(seen.values());
+  }
+
+  async getUnreadCount(userId: number) {
+    const count = await this.prisma.message.count({
+      where: { receiverId: userId, isRead: false },
+    });
+    return { count };
+  }
+
+  async markMessagesAsRead(userId: number, senderId: number) {
+    await this.prisma.message.updateMany({
+      where: { senderId, receiverId: userId, isRead: false },
+      data: { isRead: true },
+    });
+    return { ok: true };
   }
 
   async getMessagesBetweenUsers(userId: number, friendId: number) {

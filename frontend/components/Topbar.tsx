@@ -17,7 +17,14 @@ export default function Topbar() {
     if (searchQuery.trim()) router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
   }
 
-  function confirmLogout() {
+  async function confirmLogout() {
+    const token = Cookies.get("token");
+    if (token) {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000"}/auth/logout`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      }).catch(() => {});
+    }
     Cookies.remove("token");
     router.push("/");
   }

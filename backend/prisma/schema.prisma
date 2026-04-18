@@ -18,6 +18,7 @@ model User {
   avatarUrl           String?  @default("https://via.placeholder.com/150")
   bio                 String?
   onlineStatus        Boolean  @default(false)
+  lastSeen            DateTime?
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
   language            String   @default("en")
@@ -105,6 +106,7 @@ model Message {
   content    String
   senderId   Int
   receiverId Int
+  isRead     Boolean  @default(false)
   createdAt  DateTime @default(now())
 
   sender   User @relation("SentMessages", fields: [senderId], references: [id])

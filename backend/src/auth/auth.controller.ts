@@ -25,6 +25,18 @@ export class AuthController {
     return this.usersService.getProfile(req.user.id);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Post('heartbeat')
+  async heartbeat(@Request() req: any) {
+    return this.authService.heartbeat(req.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('logout')
+  async logout(@Request() req: any) {
+    return this.authService.logout(req.user.id);
+  }
+
   // Neue Endpoints für Chat
   @UseGuards(JwtAuthGuard)
   @Get('users')
@@ -39,8 +51,20 @@ export class AuthController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Get('unread-count')
+  async getUnreadCount(@Request() req: any) {
+    return this.authService.getUnreadCount(req.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Get('messages/:friendId')
   async getMessages(@Request() req: any, @Param('friendId') friendId: string) {
     return this.authService.getMessagesBetweenUsers(req.user.id, +friendId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('messages/:senderId/read')
+  async markAsRead(@Request() req: any, @Param('senderId') senderId: string) {
+    return this.authService.markMessagesAsRead(req.user.id, +senderId);
   }
 }

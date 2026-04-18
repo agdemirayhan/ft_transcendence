@@ -69,6 +69,43 @@ export class PostsService {
     return posts.map((post) => this.toResponse(post));
   }
 
+  async trendingHashtags(limit = 10) {
+    const posts = await this.prisma.post.findMany({
+      select: { content: true },
+    });
+
+    const counts = new Map<string, number>();
+    const tagRegex = /#[\w]+/gi;
+    for (const { content } of posts) {
+      const tags = content.match(tagRegex) ?? [];
+      for (const tag of tags) {
+        const lower = tag.toLowerCase();
+        counts.set(lower, (counts.get(lower) ?? 0) + 1);
+      }
+    }
+
+    return [...counts.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, limit)
+      .map(([tag, count]) => ({ tag, count }));
+  }
+
+  async searchByContent(q: string) {
+    const posts = await this.prisma.post.findMany({
+      where: {
+        content: { contains: q, mode: 'insensitive' },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+      include: {
+        author: { select: { id: true, username: true, avatarUrl: true } },
+        files: { select: { id: true, filename: true, mimetype: true } },
+        _count: { select: { likes: true, comments: true } },
+      },
+    });
+    return posts.map((post) => this.toResponse(post));
+  }
+
   async feed(userId: number) {
     const following = await this.prisma.follow.findMany({
       where: { followerId: userId },

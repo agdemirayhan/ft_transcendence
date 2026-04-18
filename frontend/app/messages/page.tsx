@@ -12,6 +12,9 @@ import '../i18n';
 interface ChatUser {
   id: number;
   username: string;
+  isOnline?: boolean;
+  unreadCount?: number;
+  lastMessageAt?: string;
 }
 
 interface Message {
@@ -19,7 +22,9 @@ interface Message {
   content: string;
   senderId: number;
   receiverId: number;
+  isRead?: boolean;
   createdAt: string;
+  sender?: { id: number; username: string };
 }
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
@@ -42,10 +47,16 @@ export default function MessagesPage() {
   const [userSearch, setUserSearch] = useState('');
   const socketRef = useRef<Socket | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const el = messagesContainerRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
   };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   useEffect(() => {
     fetch(`${API_URL}/auth/me`, { headers: authHeaders() })
@@ -60,40 +71,57 @@ export default function MessagesPage() {
       .then((data) => { if (Array.isArray(data)) setChatUsers(data); });
   }, [currentUserId]);
 
+  const selectedIdRef = useRef<number | null>(null);
+  selectedIdRef.current = selectedId;
+
   useEffect(() => {
-    if (!currentUserId || !selectedId) return;
+    if (!currentUserId) return;
     const token = Cookies.get('token');
     const socket = io(API_URL, { auth: { token } });
     socketRef.current = socket;
 
     socket.on('newMessage', (msg: Message) => {
-      if (msg.senderId === selectedId || msg.receiverId === selectedId) {
+      const active = selectedIdRef.current;
+      if (msg.senderId === active || msg.receiverId === active) {
         setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]));
+        if (msg.senderId === active) {
+          fetch(`${API_URL}/auth/messages/${msg.senderId}/read`, { method: 'POST', headers: authHeaders() }).catch(() => {});
+        }
         scrollToBottom();
       }
+      setChatUsers((prev) => {
+        const otherId = msg.senderId === currentUserId ? msg.receiverId : msg.senderId;
+        const isUnread = msg.senderId !== currentUserId && msg.senderId !== active;
+        let updated: ChatUser[];
+        const exists = prev.find((u) => u.id === otherId);
+        if (!exists) {
+          updated = [{ id: otherId, username: msg.sender?.username ?? otherId.toString(), unreadCount: isUnread ? 1 : 0, lastMessageAt: msg.createdAt }, ...prev];
+        } else {
+          updated = prev.map((u) => u.id === otherId
+            ? { ...u, lastMessageAt: msg.createdAt, unreadCount: isUnread ? (u.unreadCount ?? 0) + 1 : u.unreadCount }
+            : u);
+        }
+        return [...updated].sort((a, b) =>
+          (b.lastMessageAt ?? '').localeCompare(a.lastMessageAt ?? '')
+        );
+      });
     });
 
     socket.on('messageSent', (msg: Message) => {
       setMessages((prev) => [...prev.filter((m) => m.id !== msg.id), msg]);
+      setChatUsers((prev) => {
+        const updated = prev.map((u) => u.id === msg.receiverId ? { ...u, lastMessageAt: msg.createdAt } : u);
+        return [...updated].sort((a, b) => (b.lastMessageAt ?? '').localeCompare(a.lastMessageAt ?? ''));
+      });
       scrollToBottom();
     });
 
     return () => { socket.disconnect(); };
-  }, [currentUserId, selectedId]);
+  }, [currentUserId]);
 
   const sendMessage = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMessage.trim() || !socketRef.current || !currentUserId || !selectedId) return;
-
-    const optimistic: Message = {
-      id: Date.now(),
-      content: newMessage,
-      senderId: currentUserId,
-      receiverId: selectedId,
-      createdAt: new Date().toISOString(),
-    };
-    setMessages((prev) => [...prev, optimistic]);
-    scrollToBottom();
     socketRef.current.emit('sendMessage', { receiverId: selectedId, content: newMessage });
     setNewMessage('');
   };
@@ -128,6 +156,17 @@ export default function MessagesPage() {
     fetch(`${API_URL}/auth/messages/${id}`, { headers: authHeaders() })
       .then((r) => r.json())
       .then((data) => { if (Array.isArray(data)) setMessages(data); })
+      .catch(console.error);
+    fetch(`${API_URL}/users/${id}`, { headers: authHeaders() })
+      .then((r) => r.json())
+      .then((data) => {
+        if (typeof data.isOnline === 'boolean') {
+          setChatUsers((prev) => prev.map((u) => u.id === id ? { ...u, isOnline: data.isOnline } : u));
+        }
+      })
+      .catch(console.error);
+    fetch(`${API_URL}/auth/messages/${id}/read`, { method: 'POST', headers: authHeaders() })
+      .then(() => setChatUsers((prev) => prev.map((u) => u.id === id ? { ...u, unreadCount: 0 } : u)))
       .catch(console.error);
   };
 
@@ -220,10 +259,22 @@ export default function MessagesPage() {
                 }}
               >
                 <Avatar name={user.username} />
-                <div>
-                  <div style={{ fontWeight: 700, fontSize: 14 }}>{user.username}</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: (user.unreadCount ?? 0) > 0 ? 800 : 700, fontSize: 14 }}>{user.username}</div>
                   <div className="muted">@{user.username}</div>
                 </div>
+                {(user.unreadCount ?? 0) > 0 && (
+                  <span style={{
+                    background: 'var(--accent)',
+                    color: '#fff',
+                    borderRadius: '999px',
+                    fontSize: 11,
+                    fontWeight: 700,
+                    padding: '2px 7px',
+                    minWidth: 20,
+                    textAlign: 'center',
+                  }}>{user.unreadCount}</span>
+                )}
               </div>
             ))}
           </div>
@@ -243,26 +294,30 @@ export default function MessagesPage() {
                 <div>
                   <div style={{ fontWeight: 800 }}>{selectedUser.username}</div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                    <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--accent2)', display: 'inline-block' }} />
-                    <span className="muted">{t('messages.online')}</span>
+                    <span style={{ width: 7, height: 7, borderRadius: '50%', background: selectedUser.isOnline ? 'var(--accent2)' : 'var(--muted)', display: 'inline-block' }} />
+                    <span className="muted">{selectedUser.isOnline ? t('messages.online') : t('messages.offline')}</span>
                   </div>
                 </div>
               </div>
 
               {/* Messages */}
-              <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px', paddingRight: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div ref={messagesContainerRef} style={{ flex: 1, overflowY: 'auto', padding: '16px 20px', paddingRight: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {messages.map((msg) => {
                   const mine = msg.senderId === currentUserId;
+                  const unread = !mine && !msg.isRead;
                   return (
                     <div key={msg.id} style={{ display: 'flex', justifyContent: mine ? 'flex-end' : 'flex-start' }}>
                       <div style={{
                         maxWidth: '70%',
                         padding: '10px 14px',
                         borderRadius: mine ? '16px 4px 16px 16px' : '4px 16px 16px 16px',
-                        background: mine ? 'linear-gradient(180deg, rgba(124,92,255,0.95), rgba(124,92,255,0.7))' : 'rgba(255,255,255,0.08)',
-                        border: '1px solid ' + (mine ? 'rgba(124,92,255,0.4)' : 'var(--border)'),
+                        background: mine
+                          ? 'linear-gradient(180deg, rgba(124,92,255,0.95), rgba(124,92,255,0.7))'
+                          : unread ? 'rgba(255,255,255,0.14)' : 'rgba(255,255,255,0.08)',
+                        border: '1px solid ' + (mine ? 'rgba(124,92,255,0.4)' : unread ? 'rgba(255,255,255,0.25)' : 'var(--border)'),
                         fontSize: 14,
                         lineHeight: 1.5,
+                        fontWeight: unread ? 600 : 400,
                       }}>
                         {msg.content}
                         <div style={{ fontSize: 10, opacity: 0.55, marginTop: 4, textAlign: 'right' }}>
