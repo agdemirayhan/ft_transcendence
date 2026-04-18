@@ -3,8 +3,8 @@
 import Topbar from "@/components/Topbar";
 import LeftSidebar from "@/components/LeftSidebar";
 import RightSidebar from "@/components/RightSidebar";
-import ProfileCard from "@/components/ProfileCard";
 import Post, { PostType } from "@/components/Post";
+import Suggestions from "@/components/Suggestions";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
@@ -36,6 +36,7 @@ function mapPost(p: {
   author: { id: number; username: string };
   counts: { likes: number; comments: number };
   files?: Array<{ id: number; filename: string; url: string }>;
+  liked?: boolean;
 }): PostType {
   return {
     id: p.id,
@@ -47,7 +48,7 @@ function mapPost(p: {
     files: Array.isArray(p.files) ? p.files : [],
     likes: p.counts.likes,
     comments: p.counts.comments ?? 0,
-    liked: false,
+    liked: p.liked ?? false,
     createdAt: p.createdAt,
   };
 }
@@ -129,13 +130,12 @@ export default function Explore() {
         <aside className="volume" />
 
         <aside className="left">
-          <ProfileCard />
           <LeftSidebar />
         </aside>
 
         <section className="center">
-          <div className="card" style={{ padding: "16px 20px" }}>
-            <div className="cardTitle">{t("home.explore")}</div>
+          <div className="profileTabs">
+            <button className="profileTab active" type="button">{t("home.explore")}</button>
           </div>
           <div className="feed">
             {posts.length === 0 ? (
@@ -161,7 +161,8 @@ export default function Explore() {
         </section>
 
         <aside className="right">
-          <RightSidebar onFollow={() => {}} />
+          <RightSidebar />
+          <Suggestions />
         </aside>
 
         <aside className="volume" />
