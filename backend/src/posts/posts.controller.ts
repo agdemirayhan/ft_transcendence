@@ -35,6 +35,18 @@ export class PostsController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Get('trending-hashtags')
+  async trendingHashtags() {
+    return this.postsService.trendingHashtags();
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('search')
+  async search(@Query('q') q: string) {
+    return this.postsService.searchByContent(q ?? '');
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Get('feed')
   async feed(@Request() req: JwtRequest) {
     return this.postsService.feed(req.user.id);

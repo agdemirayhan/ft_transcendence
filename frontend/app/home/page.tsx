@@ -328,18 +328,18 @@ export default function Home() {
           <PostComposer onPost={addPost} username={currentUser?.username ?? "You"} />
           <div className="feed">
             {posts.length === 0 ? (
-  <Card>
-    <div style={{ padding: "20px", textAlign: "center", color: "var(--muted)" }}>
-      No posts yet. Be the first to post!
-    </div>
-  </Card>
-) : (
-  posts.map((p) => (
-    <Card key={p.id}>
-      <Post post={p} isOwn={currentUser?.id === p.authorId} onToggleLike={toggleLike} onDelete={deletePost} onAuthorClick={(id) => router.push(`/profile/${id}`)} />
-    </Card>
-  ))
-)}
+              <Card>
+                <div style={{ padding: "20px", textAlign: "center", color: "var(--muted)" }}>
+                  No posts yet. Be the first to post!
+                </div>
+              </Card>
+            ) : (
+              posts.map((p) => (
+                <Card key={p.id}>
+                  <Post post={p} isOwn={currentUser?.id === p.authorId} onToggleLike={toggleLike} onDelete={deletePost} onAuthorClick={(id) => router.push(`/profile/${id}`)} />
+                </Card>
+              ))
+            )}
           </div>
         </section>
 
