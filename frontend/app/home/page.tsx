@@ -210,12 +210,6 @@ export default function Home() {
     }
     setAuthChecked(true);
 
-    const sendHeartbeat = () =>
-      fetch(`${API_URL}/auth/heartbeat`, { method: "POST", headers: authHeaders() }).catch(() => {});
-
-    sendHeartbeat();
-    const interval = setInterval(sendHeartbeat, 2 * 60 * 1000);
-
     fetch(`${API_URL}/auth/me`, { headers: authHeaders() })
       .then((r) => r.json())
       .then((data) => setCurrentUser(data))
@@ -230,7 +224,6 @@ export default function Home() {
       })
       .catch(console.error);
 
-    return () => clearInterval(interval);
   }, [router]);
 
   async function addPost(content: string, attachment?: File | null): Promise<boolean> {

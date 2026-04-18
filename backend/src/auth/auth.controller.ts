@@ -55,4 +55,10 @@ export class AuthController {
   async getMessages(@Request() req: any, @Param('friendId') friendId: string) {
     return this.authService.getMessagesBetweenUsers(req.user.id, +friendId);
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('messages/:senderId/read')
+  async markAsRead(@Request() req: any, @Param('senderId') senderId: string) {
+    return this.authService.markMessagesAsRead(req.user.id, +senderId);
+  }
 }

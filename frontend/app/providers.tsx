@@ -6,6 +6,11 @@ import Cookies from 'js-cookie';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
 
+function authHeaders(): Record<string, string> {
+  const token = Cookies.get('token');
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 export default function Providers({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     async function loadLanguage() {
@@ -21,7 +26,6 @@ export default function Providers({ children }: { children: React.ReactNode }) {
             localStorage.setItem('language', data.language);
           }
         } catch {
-          // localStorage'dan al
           const saved = localStorage.getItem('language');
           if (saved) i18n.changeLanguage(saved);
         }
@@ -31,6 +35,20 @@ export default function Providers({ children }: { children: React.ReactNode }) {
       }
     }
     loadLanguage();
+  }, []);
+
+  useEffect(() => {
+    const token = Cookies.get('token');
+    if (!token) return;
+
+    const sendHeartbeat = () => {
+      if (!Cookies.get('token')) return;
+      fetch(`${API_URL}/auth/heartbeat`, { method: 'POST', headers: authHeaders() }).catch(() => {});
+    };
+
+    sendHeartbeat();
+    const interval = setInterval(sendHeartbeat, 2 * 60 * 1000);
+    return () => clearInterval(interval);
   }, []);
 
   return <>{children}</>;
