@@ -35,7 +35,7 @@ export default function LeftSidebar() {
       <div className="cardTitle">{t("home.shortcuts")}</div>
       <div className="list">
         <button className="linkBtn" type="button" onClick={() => router.push("/home")}>{t("home.feed")}</button>
-        <button className="linkBtn" type="button">{t("home.explore")}</button>
+        <button className="linkBtn" type="button" onClick={() => router.push("/explore")}>{t("home.explore")}</button>
         <button className="linkBtn" type="button" onClick={() => router.push("/messages")} style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           {t("home.messages")}
           {unreadCount > 0 && (

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import Cookies from "js-cookie";
@@ -38,6 +38,16 @@ function FollowingModal({ type, onClose }: { type: "following" | "followers"; on
       .finally(() => setLoading(false));
   }, [type]);
 
+  async function unfollow(userId: number, e: React.MouseEvent) {
+    e.stopPropagation();
+    try {
+      await fetch(`${API_URL}/users/${userId}/follow`, { method: "DELETE", headers: authHeaders() });
+      setList((prev) => prev.filter((u) => u.id !== userId));
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
   return (
     <div className="modalOverlay" style={{ backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)" }} onClick={onClose}>
       <div className="modal" style={{ maxWidth: 400 }} onClick={(e) => e.stopPropagation()}>
@@ -51,10 +61,15 @@ function FollowingModal({ type, onClose }: { type: "following" | "followers"; on
           {list.map((u) => (
             <div key={u.id} className="modalListItem" onClick={() => { onClose(); router.push(`/profile/${u.id}`); }}>
               <Avatar name={u.username} />
-              <div>
+              <div style={{ flex: 1 }}>
                 <div className="name">{u.username}</div>
                 <div className="muted">@{u.username}</div>
               </div>
+              {type === "following" && (
+                <button className="btn btnSmall" type="button" onClick={(e) => unfollow(u.id, e)}>
+                  Unfollow
+                </button>
+              )}
             </div>
           ))}
         </div>
@@ -63,7 +78,7 @@ function FollowingModal({ type, onClose }: { type: "following" | "followers"; on
   );
 }
 
-export default function ProfileCard() {
+export default function ProfileCard({ followingDelta = 0 }: { followingDelta?: number }) {
   const router = useRouter();
   const { t } = useTranslation();
   const [user, setUser] = useState<UserProfile | null>(null);
@@ -103,7 +118,7 @@ export default function ProfileCard() {
             <div className="muted">{t("home.followers")}</div>
           </div>
           <div className="stat statClickable" onClick={() => setShowModal("following")}>
-            <div className="statNum">{user?.stats?.following ?? "-"}</div>
+            <div className="statNum">{user ? (user.stats.following + followingDelta) : "-"}</div>
             <div className="muted">{t("home.following")}</div>
           </div>
         </div>
