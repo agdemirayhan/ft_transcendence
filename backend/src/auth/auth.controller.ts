@@ -51,6 +51,12 @@ export class AuthController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Get('unread-count')
+  async getUnreadCount(@Request() req: any) {
+    return this.authService.getUnreadCount(req.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Get('messages/:friendId')
   async getMessages(@Request() req: any, @Param('friendId') friendId: string) {
     return this.authService.getMessagesBetweenUsers(req.user.id, +friendId);

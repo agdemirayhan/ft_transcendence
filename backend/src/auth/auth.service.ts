@@ -148,6 +148,13 @@ export class AuthService {
     return Array.from(seen.values());
   }
 
+  async getUnreadCount(userId: number) {
+    const count = await this.prisma.message.count({
+      where: { receiverId: userId, isRead: false },
+    });
+    return { count };
+  }
+
   async markMessagesAsRead(userId: number, senderId: number) {
     await this.prisma.message.updateMany({
       where: { senderId, receiverId: userId, isRead: false },
