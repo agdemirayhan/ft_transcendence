@@ -8,6 +8,7 @@ import { TwoFactorService } from './twofactor.service';
   imports: [PrismaModule, AuthModule],
   controllers: [TwoFactorController],
   providers: [TwoFactorService],
+  exports: [TwoFactorService],
 })
 export class TwoFactorModule {}
  

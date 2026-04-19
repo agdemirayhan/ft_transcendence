@@ -36,6 +36,7 @@ export class UsersService {
         bio: true,
         avatarUrl: true,
         language: true,
+        twoFactorEnabled: true,
         createdAt: true,
         onlineStatus: true,
         lastSeen: true,
@@ -60,6 +61,7 @@ export class UsersService {
       bio: user.bio,
       avatarUrl: user.avatarUrl,
       language: user.language,
+      twoFactorEnabled: user.twoFactorEnabled,
       createdAt: user.createdAt,
       isOnline: computeIsOnline(user.onlineStatus, user.lastSeen),
       stats: {

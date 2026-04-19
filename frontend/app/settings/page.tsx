@@ -18,9 +18,7 @@ export default function SettingsPage() {
   const [isTwoFactorEnabled, setIsTwoFactorEnabled] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string | null>(null);
-  const [setupToken, setSetupToken] = useState("");
-  const [disableToken, setDisableToken] = useState("");
+  const [oauthPopupOpen, setOauthPopupOpen] = useState(false);
   const [language, setLanguage] = useState<Language>("en");
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
@@ -53,6 +51,23 @@ export default function SettingsPage() {
     loadProfile();
   }, []);
 
+  useEffect(() => {
+    function handleMessage(event: MessageEvent) {
+      if (event.origin !== window.location.origin) {
+        return;
+      }
+
+      if (event.data?.type === "twofactor:enabled") {
+        setIsTwoFactorEnabled(true);
+        setOauthPopupOpen(false);
+        setMessage(t("settings.2fa_enabled"));
+      }
+    }
+
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, [t]);
+
   async function handleLanguageChange(e: ChangeEvent<HTMLSelectElement>) {
     const value = e.target.value as Language;
     setLanguage(value);
@@ -79,6 +94,13 @@ export default function SettingsPage() {
 
   async function startEnable2FA() {
     setError(""); setMessage(""); setIsSubmitting(true);
+    const popup = window.open("", "oauth2_popup", "popup=yes,width=560,height=760");
+    if (!popup) {
+      setIsSubmitting(false);
+      setError("Popup blocked. Please allow popups and try again.");
+      return;
+    }
+
     try {
       const token = Cookies.get("token");
       if (!token) throw new Error("No auth token found.");
@@ -87,10 +109,21 @@ export default function SettingsPage() {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Could not generate QR code.");
-      setQrCodeDataUrl(data.qrCodeDataUrl);
-      setMessage(t("settings.qr_scan"));
+      if (!res.ok) {
+        popup.close();
+        throw new Error(data.message || "Could not start OAuth2.");
+      }
+
+      if (!data.oauth2Url) {
+        popup.close();
+        throw new Error("OAuth2 URL was not provided by backend.");
+      }
+
+      popup.location.href = data.oauth2Url;
+      setOauthPopupOpen(true);
+      setMessage(t("settings.oauth_popup_started"));
     } catch (err) {
+      popup.close();
       setError(err instanceof Error ? err.message : "Could not enable 2FA.");
     } finally {
       setIsSubmitting(false);
@@ -104,17 +137,15 @@ export default function SettingsPage() {
       if (!token) throw new Error("No auth token found.");
       const res = await fetch(`${API_URL}/2fa/verify-setup`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ token: setupToken }),
+        headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Invalid setup token.");
+      if (!res.ok) throw new Error(data.message || "OAuth2 setup not completed yet.");
       setIsTwoFactorEnabled(true);
-      setSetupToken("");
-      setQrCodeDataUrl(null);
+      setOauthPopupOpen(false);
       setMessage(data.message || "2FA enabled.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not verify setup token.");
+      setError(err instanceof Error ? err.message : "Could not verify OAuth2 setup.");
     } finally {
       setIsSubmitting(false);
     }
@@ -127,14 +158,12 @@ export default function SettingsPage() {
       if (!token) throw new Error("No auth token found.");
       const res = await fetch(`${API_URL}/2fa/disable`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ token: disableToken }),
+        headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Could not disable 2FA.");
       setIsTwoFactorEnabled(false);
-      setDisableToken("");
-      setQrCodeDataUrl(null);
+      setOauthPopupOpen(false);
       setMessage(data.message || "2FA disabled.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not disable 2FA.");
@@ -208,47 +237,24 @@ export default function SettingsPage() {
               <button className="btn" type="button" onClick={startEnable2FA} disabled={isSubmitting}>
                 {isSubmitting ? t("settings.generating") : t("settings.enable_2fa")}
               </button>
-              {qrCodeDataUrl ? (
-                <>
-                  <img src={qrCodeDataUrl} alt="2FA QR code" className="qrPreview" />
-                  <input
-                    className="authInput"
-                    value={setupToken}
-                    onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                      setSetupToken(e.target.value.replace(/\D/g, "").slice(0, 6))
-                    }
-                    placeholder={t("settings.enter_6digit")}
-                    inputMode="numeric"
-                    maxLength={6}
-                  />
-                  <button
-                    className="btn"
-                    type="button"
-                    onClick={confirmEnable2FA}
-                    disabled={isSubmitting || setupToken.length !== 6}
-                  >
-                    {isSubmitting ? t("settings.verifying") : t("settings.confirm_setup")}
-                  </button>
-                </>
+              {oauthPopupOpen ? (
+                <button
+                  className="btn"
+                  type="button"
+                  onClick={confirmEnable2FA}
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? t("settings.verifying") : t("settings.confirm_setup")}
+                </button>
               ) : null}
             </div>
           ) : (
             <div style={{ display: "grid", gap: 12 }}>
-              <input
-                className="authInput"
-                value={disableToken}
-                onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                  setDisableToken(e.target.value.replace(/\D/g, "").slice(0, 6))
-                }
-                placeholder={t("settings.enter_current_6digit")}
-                inputMode="numeric"
-                maxLength={6}
-              />
               <button
                 className="ghostBtn"
                 type="button"
                 onClick={disable2FA}
-                disabled={isSubmitting || disableToken.length !== 6}
+                disabled={isSubmitting}
               >
                 {isSubmitting ? t("settings.disabling") : t("settings.disable_2fa")}
               </button>

@@ -24,7 +24,8 @@
     "deleting": "Deleting...",
     "language_updated": "Language updated.",
     "back": "← Back",
-    "qr_scan": "QR code generated. Scan it and enter your 6-digit code."
+    "qr_scan": "OAuth2 setup is ready.",
+    "oauth_popup_started": "OAuth2 popup opened. Complete sign-in there, then confirm setup."
   },
    "profile": {
     "back": "← Back",

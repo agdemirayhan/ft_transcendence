@@ -24,7 +24,8 @@
     "deleting": "Siliniyor...",
     "language_updated": "Dil güncellendi.",
     "back": "← Geri",
-    "qr_scan": "QR kodu oluşturuldu. Tarayın ve 6 haneli kodunuzu girin."
+    "qr_scan": "OAuth2 kurulumu hazır.",
+    "oauth_popup_started": "OAuth2 penceresi açıldı. Girişi orada tamamlayıp kurulumu onaylayın."
   },
   "profile": {
     "back": "← Geri",

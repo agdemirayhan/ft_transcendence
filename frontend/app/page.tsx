@@ -79,12 +79,6 @@ export default function AuthPage() {
       }
 
       if (mode === "login") {
-        if (data.requiresTwoFactor && data.tempToken) {
-          sessionStorage.setItem("tempToken", data.tempToken);
-          router.push("/2fa");
-          return;
-        }
-
         Cookies.set("token", data.access_token, { expires: 1 });
         router.push("/home");
       } else {

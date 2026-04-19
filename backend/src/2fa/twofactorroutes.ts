@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Request, UseGuards } from '@nestjs/common';
+import { Controller, Post, Request, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt/jwt.guard';
 import { TwoFactorService } from './twofactor.service';
 
@@ -20,18 +20,13 @@ export class TwoFactorController {
 
   @UseGuards(JwtAuthGuard)
   @Post('verify-setup')
-  async verifySetup(@Request() req: JwtRequest, @Body() body: { token: string }) {
-    return this.twoFactorService.verifySetup(req.user.id, body.token);
-  }
-
-  @Post('verify-login')
-  async verifyLogin(@Body() body: { tempToken: string; token: string }) {
-    return this.twoFactorService.verifyLogin(body.tempToken, body.token);
+  async verifySetup(@Request() req: JwtRequest) {
+    return this.twoFactorService.verifySetup(req.user.id);
   }
 
   @UseGuards(JwtAuthGuard)
   @Post('disable')
-  async disable(@Request() req: JwtRequest, @Body() body: { token: string }) {
-    return this.twoFactorService.disable(req.user.id, body.token);
+  async disable(@Request() req: JwtRequest) {
+    return this.twoFactorService.disable(req.user.id);
   }
 }

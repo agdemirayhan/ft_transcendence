@@ -33,16 +33,6 @@ export class AuthService {
   async login(user: any) {
     const payload = { sub: user.id, email: user.email };
 
-    if (user.twoFactorEnabled && user.twoFactorSecret) {
-      return {
-        requiresTwoFactor: true,
-        tempToken: this.jwtService.sign(
-          { ...payload, twoFactorPending: true },
-          { expiresIn: '5m' },
-        ),
-      };
-    }
-
     await this.prisma.user.update({
       where: { id: user.id },
       data: { onlineStatus: true, lastSeen: new Date() },
