@@ -16,6 +16,7 @@ type UserProfile = {
   id: number;
   username: string;
   bio: string | null;
+  avatarUrl: string | null;
   stats: { posts: number; followers: number; following: number };
 };
 
@@ -35,6 +36,11 @@ function authHeaders(): HeadersInit {
   };
 }
 
+function authUploadHeaders(): HeadersInit {
+  const token = Cookies.get("token");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 export default function UserProfilePage() {
   const router = useRouter();
   const params = useParams();
@@ -50,7 +56,9 @@ export default function UserProfilePage() {
   const [editingBio, setEditingBio] = useState(false);
   const [bioText, setBioText] = useState("");
   const [bioSaving, setBioSaving] = useState(false);
+  const [avatarUploading, setAvatarUploading] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!dropdownOpen) return;
@@ -186,6 +194,33 @@ export default function UserProfilePage() {
     }
   }
 
+  async function changeAvatar(file: File) {
+    setAvatarUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const uploadRes = await fetch(`${API_URL}/upload`, {
+        method: "POST",
+        headers: authUploadHeaders(),
+        body: formData,
+      });
+      if (!uploadRes.ok) return;
+      const uploaded = await uploadRes.json();
+      const avatarUrl = `${API_URL}${uploaded.url}`;
+      const res = await fetch(`${API_URL}/users/me/avatar`, {
+        method: "PATCH",
+        headers: authHeaders(),
+        body: JSON.stringify({ avatarUrl }),
+      });
+      if (!res.ok) return;
+      setUser((prev) => prev ? { ...prev, avatarUrl } : prev);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setAvatarUploading(false);
+    }
+  }
+
   return (
     <div className="page">
       <Topbar />
@@ -201,9 +236,27 @@ export default function UserProfilePage() {
           <div className="profileCover" />
 
           <div className="profileAvatarRow">
-            <div className="profileAvatar">
-              {user?.username?.[0]?.toUpperCase() ?? "?"}
+            <div className="profileAvatar" style={{ position: "relative" }}>
+              {user?.avatarUrl && !user.avatarUrl.includes("via.placeholder.com") ? (
+                <img
+                  src={user.avatarUrl}
+                  alt={user.username}
+                  style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "inherit" }}
+                />
+              ) : (
+                user?.username?.[0]?.toUpperCase() ?? "?"
+              )}
+              {avatarUploading && (
+                <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.5)", display: "grid", placeItems: "center", borderRadius: "inherit", fontSize: 12, color: "#fff" }}>...</div>
+              )}
             </div>
+            <input
+              ref={avatarInputRef}
+              type="file"
+              hidden
+              accept="image/png,image/jpeg"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) changeAvatar(f); e.target.value = ""; }}
+            />
             {isOwnProfile === true && (
               <div style={{ position: "relative" }} ref={dropdownRef}>
                 <button
@@ -229,9 +282,10 @@ export default function UserProfilePage() {
                     <button
                       type="button"
                       style={{ display: "block", width: "100%", padding: "12px 16px", textAlign: "left", background: "none", border: "none", cursor: "pointer", fontSize: 14, color: "var(--text)" }}
-                      onClick={() => { setDropdownOpen(false); alert(t("profile.edit_soon")); }}
+                      onClick={() => { setDropdownOpen(false); avatarInputRef.current?.click(); }}
+                      disabled={avatarUploading}
                     >
-                      {t("profile.change_pic")}
+                      {avatarUploading ? "Uploading..." : t("profile.change_pic")}
                     </button>
                     <div style={{ height: 1, background: "var(--border)" }} />
                     <button

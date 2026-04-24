@@ -25,6 +25,12 @@ export class UsersController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Patch('me/avatar')
+  async updateAvatar(@Req() req: any, @Body('avatarUrl') avatarUrl: string) {
+    return this.usersService.updateAvatar(req.user.id, avatarUrl ?? '');
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Get('me/following')
   async getFollowing(@Req() req: any) {
     return this.usersService.getFollowing(req.user.id);
