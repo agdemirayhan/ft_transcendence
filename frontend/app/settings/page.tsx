@@ -173,15 +173,20 @@ export default function SettingsPage() {
   }
 
   async function deleteAccount() {
+    console.log("[delete] clicked, confirmText:", deleteConfirmText);
     setError(""); setMessage(""); setIsDeleting(true);
     try {
       const token = Cookies.get("token");
+      console.log("[delete] token:", token ? "found" : "NOT FOUND");
       if (!token) throw new Error("No auth token found.");
+      console.log("[delete] fetching:", `${API_URL}/auth/delete-account`);
       const res = await fetch(`${API_URL}/auth/delete-account`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
+      console.log("[delete] response status:", res.status);
       const data = await res.json().catch(() => ({}));
+      console.log("[delete] response body:", data);
       if (!res.ok) throw new Error(data.message || "Could not delete account.");
       Cookies.remove("token");
       localStorage.removeItem("language");
@@ -189,6 +194,7 @@ export default function SettingsPage() {
       setDeleteConfirmText("");
       router.push("/");
     } catch (err) {
+      console.error("[delete] error:", err);
       setError(err instanceof Error ? err.message : "Could not delete account.");
     } finally {
       setIsDeleting(false);
@@ -295,6 +301,7 @@ export default function SettingsPage() {
               onChange={(e: ChangeEvent<HTMLInputElement>) => setDeleteConfirmText(e.target.value)}
               placeholder={t("settings.delete_placeholder")}
             />
+            {error ? <p className="authError" style={{ margin: 0 }}>{error}</p> : null}
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
               <button
                 type="button"
