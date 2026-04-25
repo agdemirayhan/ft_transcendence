@@ -48,7 +48,7 @@ export default function Topbar() {
         </form>
         <span className="spacer" />
         <button className="btn btnSmall btnOutline" onClick={() => setShowLogout(true)} type="button" style={{ whiteSpace: "nowrap", flexShrink: 0 }}>
-          Log out
+          {t("home.logout")}
         </button>
       </header>
 
@@ -56,13 +56,13 @@ export default function Topbar() {
         <div className="modalOverlay" style={{ backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)" }} onClick={() => setShowLogout(false)}>
           <div className="modal" style={{ maxWidth: 400 }} onClick={(e) => e.stopPropagation()}>
             <div className="modalHeader">
-              <h2>Log out</h2>
+              <h2>{t("home.logout")}</h2>
               <button className="ghostBtn" onClick={() => setShowLogout(false)} type="button">✕</button>
             </div>
-            <p className="muted">Are you sure you want to log out?</p>
+            <p className="muted">{t("home.logout_confirm")}</p>
             <div className="modalActions">
-              <button type="button" className="ghostBtn" onClick={() => setShowLogout(false)}>Cancel</button>
-              <button type="button" className="btn" onClick={confirmLogout}>Log out</button>
+              <button type="button" className="ghostBtn" onClick={() => setShowLogout(false)}>{t("settings.cancel")}</button>
+              <button type="button" className="btn" onClick={confirmLogout}>{t("home.logout")}</button>
             </div>
           </div>
         </div>

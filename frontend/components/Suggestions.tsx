@@ -21,7 +21,8 @@ type Suggestion = { id: number; username: string; avatarUrl?: string | null; fol
 
 export default function Suggestions({ onFollow }: { onFollow?: () => void }) {
   const router = useRouter();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isRTL = i18n.language === "ar";
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [fadingIds, setFadingIds] = useState<Set<number>>(new Set());
 
@@ -48,9 +49,11 @@ export default function Suggestions({ onFollow }: { onFollow?: () => void }) {
     }
   }
 
+  const textStyle = isRTL ? { direction: "rtl" as const, textAlign: "right" as const } : {};
+
   return (
     <div className="card">
-      <div className="cardTitle">{t("home.suggestions")}</div>
+      <div className="cardTitle" style={textStyle}>{t("home.suggestions")}</div>
       <div className="suggestions">
         {suggestions.map((u) => (
           <div
@@ -64,8 +67,8 @@ export default function Suggestions({ onFollow }: { onFollow?: () => void }) {
             <div className="row" onClick={() => router.push(`/profile/${u.id}`)}>
               <Avatar name={u.username} avatarUrl={u.avatarUrl} />
               <div>
-                <div className="name">{u.username}</div>
-                <div className="muted">@{u.username}</div>
+                <div className="name" style={textStyle}>{u.username}</div>
+                <div className="muted" style={textStyle}>@{u.username}</div>
               </div>
             </div>
             <button className="btn btnSmall" onClick={() => toggleFollow(u.id)} type="button">
@@ -74,7 +77,7 @@ export default function Suggestions({ onFollow }: { onFollow?: () => void }) {
           </div>
         ))}
         {suggestions.length === 0 && (
-          <div className="muted" style={{ fontSize: 13 }}>No suggestions yet.</div>
+          <div className="muted" style={{ fontSize: 13, ...textStyle }}>No suggestions yet.</div>
         )}
       </div>
     </div>

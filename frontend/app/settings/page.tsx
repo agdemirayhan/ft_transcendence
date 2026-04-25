@@ -9,7 +9,7 @@ import Topbar from "@/components/Topbar";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
 
-type Language = "en" | "de" | "tr";
+type Language = "en" | "de" | "tr" | "ar";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -31,7 +31,7 @@ export default function SettingsPage() {
       const token = Cookies.get("token");
       try {
         const savedLanguage = localStorage.getItem("language") as Language | null;
-        if (savedLanguage === "en" || savedLanguage === "de" || savedLanguage === "tr") {
+        if (savedLanguage === "en" || savedLanguage === "de" || savedLanguage === "tr" || savedLanguage === "ar") {
           setLanguage(savedLanguage);
           i18n.changeLanguage(savedLanguage);
         }
@@ -233,6 +233,7 @@ export default function SettingsPage() {
               <option value="en">English</option>
               <option value="de">Deutsch</option>
               <option value="tr">Türkçe</option>
+              <option value="ar">العربية</option>
             </select>
           </div>
 

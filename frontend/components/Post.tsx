@@ -150,7 +150,9 @@ export default function Post({
 
   return (
     <div className="post">
-      <Avatar name={post.author} avatarUrl={post.authorAvatarUrl} />
+      <div>
+        <Avatar name={post.author} avatarUrl={post.authorAvatarUrl} />
+      </div>
       <div className="postBody">
         <div className="postHeader">
           <div className="postAuthor">
@@ -222,7 +224,11 @@ export default function Post({
         <div
           ref={contentRef}
           className="postContent"
-          style={isLong && !expanded ? { whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", paddingRight: "20px" } : { paddingRight: "20px" }}
+          dir="auto"
+          style={{
+            ...(isLong && !expanded ? { whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" } : {}),
+            paddingRight: "20px",
+          }}
         >
           {post.content}
         </div>
@@ -293,6 +299,7 @@ export default function Post({
           <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
             <input
               className="authInput"
+              dir="auto"
               style={{ flex: 1, padding: "8px 12px" }}
               placeholder={t("home.write_comment")}
               value={commentText}
@@ -318,12 +325,12 @@ export default function Post({
           {commentsList.map((c) => (
             <div key={c.id} className="commentItem">
               <Avatar name={c.author.username} avatarUrl={c.author.avatarUrl} size={38} />
-              <div style={{ fontSize: 15 }}>
+              <div style={{ fontSize: 15, flex: 1 }}>
                 <div style={{ display: "flex", gap: 6, alignItems: "baseline" }}>
                   <span className="name">{c.author.username}</span>
                   <span className="muted" style={{ fontSize: 11 }}>{timeAgo(c.createdAt)}</span>
                 </div>
-                <p style={{ margin: 0 }}>{c.content}</p>
+                <p dir="auto" style={{ margin: 0 }}>{c.content}</p>
               </div>
             </div>
           ))}

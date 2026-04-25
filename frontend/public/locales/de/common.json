@@ -64,6 +64,7 @@
     "followers": "Follower",
     "following": "Gefolgt",
     "edit_profile": "Profil bearbeiten",
+    "admin_panel": "Admin-Panel",
     "shortcuts": "Shortcuts",
     "feed": "Startseite",
     "empty_feed": "Noch keine Beiträge von Personen, denen du folgst.",
@@ -81,7 +82,9 @@
     "share": "Teilen",
     "just_now": "gerade eben",
     "show_more": "Mehr anzeigen",
-    "show_less": "Weniger anzeigen"
+    "show_less": "Weniger anzeigen",
+    "logout": "Abmelden",
+    "logout_confirm": "Möchten Sie sich wirklich abmelden?"
   },
   "post": {
     "edit": "Bearbeiten",
