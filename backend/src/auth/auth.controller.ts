@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards, Request, Get, Param } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Request, Get, Param, Delete, Patch } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LocalAuthGuard } from './local-auth.guard';
 import { JwtAuthGuard } from './jwt/jwt.guard';
@@ -66,5 +66,17 @@ export class AuthController {
   @Post('messages/:senderId/read')
   async markAsRead(@Request() req: any, @Param('senderId') senderId: string) {
     return this.authService.markMessagesAsRead(req.user.id, +senderId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete('delete-account')
+  async deleteAccount(@Request() req: any) {
+    return this.authService.deleteAccount(req.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('language')
+  async updateLanguage(@Request() req: any, @Body() body: { language: string }) {
+    return this.authService.updateLanguage(req.user.id, body.language);
   }
 }
