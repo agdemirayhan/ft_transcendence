@@ -7,6 +7,7 @@ import LanguageDetector from 'i18next-browser-languagedetector';
 import enCommon from '../public/locales/en/common.json';
 import trCommon from '../public/locales/tr/common.json';
 import deCommon from '../public/locales/de/common.json';
+import arCommon from '../public/locales/ar/common.json';
 
 if (!i18n.isInitialized) {
   i18n
@@ -17,6 +18,7 @@ if (!i18n.isInitialized) {
         en: { common: enCommon },
         tr: { common: trCommon },
         de: { common: deCommon },
+        ar: { common: arCommon },
       },
       fallbackLng: 'en',
       defaultNS: 'common',

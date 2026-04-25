@@ -61,7 +61,7 @@ export class AuthService {
   }
 
   async updateLanguage(userId: number, language: string) {
-    const allowed = ['en', 'tr', 'de'];
+    const allowed = ['en', 'tr', 'de', 'ar'];
     if (!allowed.includes(language)) {
       throw new UnauthorizedException('Invalid language');
     }
