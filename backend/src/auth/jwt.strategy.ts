@@ -27,13 +27,13 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, email: true },
+      select: { id: true, email: true, role: true },
     });
 
     if (!user) {
       throw new UnauthorizedException('User no longer exists');
     }
 
-    return { id: user.id, email: user.email };
+    return { id: user.id, email: user.email, role: user.role };
   }
 }

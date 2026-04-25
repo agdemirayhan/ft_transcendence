@@ -81,6 +81,7 @@ export class AuthService {
         username: true,
         twoFactorEnabled: true,
         language: true,
+        role: true,
         _count: {
           select: { posts: true, followers: true, following: true },
         },

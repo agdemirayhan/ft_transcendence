@@ -5,6 +5,9 @@ const prisma = new PrismaClient();
 const passwordHash =
   "$2a$10$Q7Qh8SxgEc3mXkMZuSE5h.vFfGh0P95nko1fGwA7d9JmI7Kf5mXU2";
 
+const adminPasswordHash =
+  "$2b$10$VsLj6c5RvaZkfrfyG9bcY.UO4y6xxbHNO1gStVFV3cuTezl740YHi";
+
 const usersToUpsert = [
   {
     username: "ayhan",
@@ -180,6 +183,18 @@ function buildCommentContent(rng) {
 async function main() {
   const rng = createRng(424242);
 
+  await prisma.user.upsert({
+    where: { username: "admin" },
+    update: { role: "admin", email: "admin@admin.com" },
+    create: {
+      username: "admin",
+      email: "admin@admin.com",
+      passwordHash: adminPasswordHash,
+      role: "admin",
+      language: "en",
+    },
+  });
+
   for (const user of usersToUpsert) {
     await prisma.user.upsert({
       where: { username: user.username },
@@ -188,6 +203,7 @@ async function main() {
         language: user.language,
         avatarUrl: user.avatarUrl,
         onlineStatus: false,
+        ...(user.role ? { role: user.role } : {}),
       },
       create: {
         email: user.email,
@@ -197,6 +213,7 @@ async function main() {
         language: user.language,
         avatarUrl: user.avatarUrl,
         onlineStatus: false,
+        ...(user.role ? { role: user.role } : {}),
       },
     });
   }

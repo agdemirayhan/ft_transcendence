@@ -12,10 +12,16 @@ export default function LeftSidebar() {
   const router = useRouter();
   const { t } = useTranslation();
   const [unreadCount, setUnreadCount] = useState(0);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     const token = Cookies.get("token");
     if (!token) return;
+
+    fetch(`${API_URL}/auth/me`, { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => r.json())
+      .then((data) => { if (data.role === "admin") setIsAdmin(true); })
+      .catch(() => {});
 
     const fetchCount = () =>
       fetch(`${API_URL}/auth/unread-count`, {
@@ -52,6 +58,11 @@ export default function LeftSidebar() {
           )}
         </button>
         <button className="linkBtn" type="button" onClick={() => router.push("/settings")}>{t("home.settings")}</button>
+        {isAdmin && (
+          <button className="linkBtn" type="button" onClick={() => router.push("/admin")} style={{ color: "var(--accent)", fontWeight: 700 }}>
+            Admin Panel
+          </button>
+        )}
       </div>
     </div>
   );

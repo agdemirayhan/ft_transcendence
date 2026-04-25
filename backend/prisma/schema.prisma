@@ -22,6 +22,7 @@ model User {
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
   language            String   @default("en")
+  role                String   @default("user")
 
   posts     Post[]
   likes     Like[]

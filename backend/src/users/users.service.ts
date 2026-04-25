@@ -36,6 +36,7 @@ export class UsersService {
         bio: true,
         avatarUrl: true,
         language: true,
+        role: true,
         twoFactorEnabled: true,
         createdAt: true,
         onlineStatus: true,
@@ -61,6 +62,7 @@ export class UsersService {
       bio: user.bio,
       avatarUrl: user.avatarUrl,
       language: user.language,
+      role: user.role,
       twoFactorEnabled: user.twoFactorEnabled,
       createdAt: user.createdAt,
       isOnline: computeIsOnline(user.onlineStatus, user.lastSeen),
@@ -70,6 +72,15 @@ export class UsersService {
         following: user._count.following,
       },
     };
+  }
+
+  async updateAvatar(userId: number, avatarUrl: string) {
+    const updated = await this.prisma.user.update({
+      where: { id: userId },
+      data: { avatarUrl },
+      select: { id: true, avatarUrl: true },
+    });
+    return updated;
   }
 
   async updateBio(userId: number, bio: string) {
