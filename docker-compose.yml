@@ -31,7 +31,7 @@ services:
       JWT_SECRET: "${JWT_SECRET:-dev-only-change-me}"
     ports:
       - "${BACKEND_PORT:-3000}:3000"
-    command: sh -c "npx prisma db push && npm run start:prod"
+    command: sh -c "npx prisma db push && npx prisma db seed && npm run start:prod"
 
   frontend:
     build:
