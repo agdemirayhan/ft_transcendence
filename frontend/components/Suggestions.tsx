@@ -17,7 +17,7 @@ function authHeaders(): HeadersInit {
   };
 }
 
-type Suggestion = { id: number; username: string; followers: number; isFollowing: boolean };
+type Suggestion = { id: number; username: string; avatarUrl?: string | null; followers: number; isFollowing: boolean };
 
 export default function Suggestions({ onFollow }: { onFollow?: () => void }) {
   const router = useRouter();
@@ -62,7 +62,7 @@ export default function Suggestions({ onFollow }: { onFollow?: () => void }) {
             }}
           >
             <div className="row" onClick={() => router.push(`/profile/${u.id}`)}>
-              <Avatar name={u.username} />
+              <Avatar name={u.username} avatarUrl={u.avatarUrl} />
               <div>
                 <div className="name">{u.username}</div>
                 <div className="muted">@{u.username}</div>

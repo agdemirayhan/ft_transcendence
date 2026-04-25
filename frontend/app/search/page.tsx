@@ -24,6 +24,7 @@ function authHeaders(): HeadersInit {
 type SearchUser = {
   id: number;
   username: string;
+  avatarUrl?: string | null;
   bio: string | null;
   followers: number;
   posts: number;
@@ -42,7 +43,7 @@ function mapPost(p: {
   id: number;
   content: string;
   createdAt: string;
-  author: { id: number; username: string };
+  author: { id: number; username: string; avatarUrl?: string | null };
   counts: { likes: number; comments: number };
   files?: Array<{ id: number; filename: string; url: string }>;
 }): PostType {
@@ -50,6 +51,7 @@ function mapPost(p: {
     id: p.id,
     authorId: p.author.id,
     author: p.author.username,
+    authorAvatarUrl: p.author.avatarUrl,
     handle: `@${p.author.username}`,
     time: timeAgo(p.createdAt),
     content: p.content,
@@ -101,7 +103,7 @@ function UserCard({
   return (
     <div className="card searchUserCard" onClick={onNavigate}>
       <div className="searchUserCardInner">
-        <Avatar name={user.username} />
+        <Avatar name={user.username} avatarUrl={user.avatarUrl} />
         <div className="searchUserInfo">
           <div className="name">{user.username}</div>
           <div className="muted" style={{ fontSize: 13 }}>@{user.username}</div>

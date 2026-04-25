@@ -79,6 +79,7 @@ export class AuthService {
         id: true,
         email: true,
         username: true,
+        avatarUrl: true,
         twoFactorEnabled: true,
         language: true,
         role: true,
@@ -115,21 +116,21 @@ export class AuthService {
         receiverId: true,
         isRead: true,
         createdAt: true,
-        sender: { select: { id: true, username: true, onlineStatus: true, lastSeen: true } },
-        receiver: { select: { id: true, username: true, onlineStatus: true, lastSeen: true } },
+        sender: { select: { id: true, username: true, avatarUrl: true, onlineStatus: true, lastSeen: true } },
+        receiver: { select: { id: true, username: true, avatarUrl: true, onlineStatus: true, lastSeen: true } },
       },
       orderBy: { createdAt: 'desc' },
     });
 
     const ONLINE_THRESHOLD_MS = 5 * 60 * 1000;
-    const seen = new Map<number, { id: number; username: string; isOnline: boolean; unreadCount: number; lastMessageAt: string }>();
+    const seen = new Map<number, { id: number; username: string; avatarUrl: string | null; isOnline: boolean; unreadCount: number; lastMessageAt: string }>();
     for (const m of messages) {
       const other = m.senderId === userId ? m.receiver : m.sender;
       if (!seen.has(other.id)) {
         const isOnline = other.onlineStatus && other.lastSeen
           ? Date.now() - new Date(other.lastSeen).getTime() < ONLINE_THRESHOLD_MS
           : false;
-        seen.set(other.id, { id: other.id, username: other.username, isOnline, unreadCount: 0, lastMessageAt: m.createdAt.toISOString() });
+        seen.set(other.id, { id: other.id, username: other.username, avatarUrl: other.avatarUrl ?? null, isOnline, unreadCount: 0, lastMessageAt: m.createdAt.toISOString() });
       }
       if (m.receiverId === userId && !m.isRead) {
         const entry = seen.get(other.id)!;
