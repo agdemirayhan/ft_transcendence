@@ -12,6 +12,7 @@ import '../i18n';
 interface ChatUser {
   id: number;
   username: string;
+  avatarUrl?: string | null;
   isOnline?: boolean;
   unreadCount?: number;
   lastMessageAt?: string;
@@ -221,7 +222,7 @@ export default function MessagesPage() {
                       onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.06)')}
                       onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                     >
-                      <Avatar name={u.username} />
+                      <Avatar name={u.username} avatarUrl={u.avatarUrl} />
                       <div>
                         <div style={{ fontWeight: 700, fontSize: 13 }}>{u.username}</div>
                         <div className="muted">@{u.username}</div>
@@ -258,7 +259,7 @@ export default function MessagesPage() {
                   if (selectedId !== user.id) (e.currentTarget as HTMLDivElement).style.background = 'transparent';
                 }}
               >
-                <Avatar name={user.username} />
+                <Avatar name={user.username} avatarUrl={user.avatarUrl} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: (user.unreadCount ?? 0) > 0 ? 800 : 700, fontSize: 14 }}>{user.username}</div>
                   <div className="muted">@{user.username}</div>
@@ -290,7 +291,7 @@ export default function MessagesPage() {
                 display: 'flex', alignItems: 'center', gap: 12,
                 padding: '12px 16px', borderBottom: '1px solid var(--border)',
               }}>
-                <Avatar name={selectedUser.username} />
+                <Avatar name={selectedUser.username} avatarUrl={selectedUser.avatarUrl} />
                 <div>
                   <div style={{ fontWeight: 800 }}>{selectedUser.username}</div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>

@@ -20,10 +20,11 @@ function authHeaders(): HeadersInit {
 type UserProfile = {
   id: number;
   username: string;
+  avatarUrl?: string | null;
   stats: { posts: number; followers: number; following: number };
 };
 
-type FollowUser = { id: number; username: string };
+type FollowUser = { id: number; username: string; avatarUrl?: string | null };
 
 function FollowingModal({ type, onClose }: { type: "following" | "followers"; onClose: () => void }) {
   const router = useRouter();
@@ -60,7 +61,7 @@ function FollowingModal({ type, onClose }: { type: "following" | "followers"; on
           {!loading && list.length === 0 && <div className="muted">No {type} yet.</div>}
           {list.map((u) => (
             <div key={u.id} className="modalListItem" onClick={() => { onClose(); router.push(`/profile/${u.id}`); }}>
-              <Avatar name={u.username} />
+              <Avatar name={u.username} avatarUrl={u.avatarUrl} />
               <div style={{ flex: 1 }}>
                 <div className="name">{u.username}</div>
                 <div className="muted">@{u.username}</div>
@@ -96,7 +97,7 @@ export default function ProfileCard({ followingDelta = 0 }: { followingDelta?: n
       <div className="card">
         <div className="cardTitle">{t("home.profile")}</div>
         <div className="profile">
-          <Avatar name={user?.username ?? "?"} />
+          <Avatar name={user?.username ?? "?"} avatarUrl={user?.avatarUrl} />
           <div>
             <div
               className="profileName"

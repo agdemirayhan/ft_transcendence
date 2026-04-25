@@ -14,6 +14,7 @@ export type PostType = {
   id: number;
   authorId: number;
   author: string;
+  authorAvatarUrl?: string | null;
   handle: string;
   time: string;
   content: string;
@@ -60,7 +61,7 @@ export default function Post({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [commentCount, setCommentCount] = useState(post.comments ?? 0);
   const [showComments, setShowComments] = useState(false);
-  const [commentsList, setCommentsList] = useState<{ id: number; author: { username: string }; content: string; createdAt: string }[]>([]);
+  const [commentsList, setCommentsList] = useState<{ id: number; author: { username: string; avatarUrl?: string | null }; content: string; createdAt: string }[]>([]);
   const [loadingComments, setLoadingComments] = useState(false);
 
   useEffect(() => {
@@ -149,7 +150,7 @@ export default function Post({
 
   return (
     <div className="post">
-      <Avatar name={post.author} />
+      <Avatar name={post.author} avatarUrl={post.authorAvatarUrl} />
       <div className="postBody">
         <div className="postHeader">
           <div className="postAuthor">
@@ -316,7 +317,7 @@ export default function Post({
           {loadingComments && <p className="muted">Loading...</p>}
           {commentsList.map((c) => (
             <div key={c.id} className="commentItem">
-              <Avatar name={c.author.username} size={38} />
+              <Avatar name={c.author.username} avatarUrl={c.author.avatarUrl} size={38} />
               <div style={{ fontSize: 15 }}>
                 <div style={{ display: "flex", gap: 6, alignItems: "baseline" }}>
                   <span className="name">{c.author.username}</span>

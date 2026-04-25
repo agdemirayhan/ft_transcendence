@@ -42,7 +42,7 @@ function mapPost(p: {
   id: number;
   content: string;
   createdAt: string;
-  author: { id: number; username: string };
+  author: { id: number; username: string; avatarUrl?: string | null };
   counts: { likes: number; comments: number };
   files?: Array<{ id: number; filename: string; url: string }>;
   liked?: boolean;
@@ -51,6 +51,7 @@ function mapPost(p: {
     id: p.id,
     authorId: p.author.id,
     author: p.author.username,
+    authorAvatarUrl: p.author.avatarUrl,
     handle: `@${p.author.username}`,
     time: timeAgo(p.createdAt),
     content: p.content,
@@ -71,7 +72,7 @@ function Card({ title, children }: { title?: string; children: React.ReactNode }
   );
 }
 
-function PostComposer({ onPost, username }: { onPost: (content: string, attachment?: File | null) => Promise<boolean>; username: string }) {
+function PostComposer({ onPost, username, avatarUrl }: { onPost: (content: string, attachment?: File | null) => Promise<boolean>; username: string; avatarUrl?: string | null }) {
   const [text, setText] = useState("");
   const [attachment, setAttachment] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -97,7 +98,7 @@ function PostComposer({ onPost, username }: { onPost: (content: string, attachme
     <Card>
       <form onSubmit={submit} className="composer">
         <div className="composerTop">
-          <Avatar name={username} />
+          <Avatar name={username} avatarUrl={avatarUrl} />
           <textarea
             value={text}
             onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setText(e.target.value)}
@@ -141,7 +142,7 @@ function PostComposer({ onPost, username }: { onPost: (content: string, attachme
   );
 }
 
-type FollowUser = { id: number; username: string; followers: number };
+type FollowUser = { id: number; username: string; avatarUrl?: string | null; followers: number };
 
 function FollowingModal({ type, onClose }: { type: "following" | "followers"; onClose: () => void }) {
   const router = useRouter();
@@ -174,7 +175,7 @@ function FollowingModal({ type, onClose }: { type: "following" | "followers"; on
           {list.map((u) => (
             <div key={u.id} className="modalListItem"
               onClick={() => { onClose(); router.push(`/profile/${u.id}`); }}>
-              <Avatar name={u.username} />
+              <Avatar name={u.username} avatarUrl={u.avatarUrl} />
               <div>
                 <div className="name">{u.username}</div>
                 <div className="muted">@{u.username}</div>
@@ -191,6 +192,7 @@ function FollowingModal({ type, onClose }: { type: "following" | "followers"; on
 type UserProfile = {
   id: number;
   username: string;
+  avatarUrl?: string | null;
   stats: { posts: number; followers: number; following: number };
 };
 
@@ -327,7 +329,7 @@ export default function Home() {
         </aside>
 
         <section className="center">
-          <PostComposer onPost={addPost} username={currentUser?.username ?? "You"} />
+          <PostComposer onPost={addPost} username={currentUser?.username ?? "You"} avatarUrl={currentUser?.avatarUrl} />
           <div className="feed">
             {posts.length === 0 ? (
               <Card>

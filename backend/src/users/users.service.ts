@@ -102,6 +102,7 @@ export class UsersService {
         id: true,
         username: true,
         bio: true,
+        avatarUrl: true,
         _count: { select: { followers: true, posts: true } },
         followers: {
           where: { followerId: currentUserId },
@@ -115,6 +116,7 @@ export class UsersService {
       id: u.id,
       username: u.username,
       bio: u.bio,
+      avatarUrl: u.avatarUrl,
       followers: u._count.followers,
       posts: u._count.posts,
       isFollowing: u.followers.length > 0,
@@ -130,6 +132,7 @@ export class UsersService {
       select: {
         id: true,
         username: true,
+        avatarUrl: true,
         onlineStatus: true,
         lastSeen: true,
         _count: { select: { followers: true } },
@@ -141,6 +144,7 @@ export class UsersService {
     return users.map((u) => ({
       id: u.id,
       username: u.username,
+      avatarUrl: u.avatarUrl,
       followers: u._count.followers,
       isFollowing: false,
       isOnline: computeIsOnline(u.onlineStatus, u.lastSeen),
@@ -151,12 +155,13 @@ export class UsersService {
     const follows = await this.prisma.follow.findMany({
       where: { followingId: userId },
       select: {
-        follower: { select: { id: true, username: true, _count: { select: { followers: true } } } },
+        follower: { select: { id: true, username: true, avatarUrl: true, _count: { select: { followers: true } } } },
       },
     });
     return follows.map((f) => ({
       id: f.follower.id,
       username: f.follower.username,
+      avatarUrl: f.follower.avatarUrl,
       followers: f.follower._count.followers,
     }));
   }
@@ -165,12 +170,13 @@ export class UsersService {
     const follows = await this.prisma.follow.findMany({
       where: { followerId: userId },
       select: {
-        following: { select: { id: true, username: true, _count: { select: { followers: true } } } },
+        following: { select: { id: true, username: true, avatarUrl: true, _count: { select: { followers: true } } } },
       },
     });
     return follows.map((f) => ({
       id: f.following.id,
       username: f.following.username,
+      avatarUrl: f.following.avatarUrl,
       followers: f.following._count.followers,
     }));
   }
