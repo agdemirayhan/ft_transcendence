@@ -107,6 +107,7 @@ function PostComposer({ onPost, username, avatarUrl }: { onPost: (content: strin
             rows={3}
             maxLength={240}
             disabled={isLoading}
+            dir="auto"
           />
         </div>
         <div className="composerBottom">

@@ -10,9 +10,17 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
 
 export default function LeftSidebar() {
   const router = useRouter();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [unreadCount, setUnreadCount] = useState(0);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isRTL, setIsRTL] = useState(false);
+
+  useEffect(() => {
+    const update = () => setIsRTL(i18n.language === "ar" || localStorage.getItem("language") === "ar");
+    update();
+    i18n.on("languageChanged", update);
+    return () => i18n.off("languageChanged", update);
+  }, [i18n]);
 
   useEffect(() => {
     const token = Cookies.get("token");
@@ -36,13 +44,15 @@ export default function LeftSidebar() {
     return () => clearInterval(interval);
   }, []);
 
+  const textStyle = isRTL ? { direction: "rtl" as const, textAlign: "right" as const } : {};
+
   return (
     <div className="card">
-      <div className="cardTitle">{t("home.shortcuts")}</div>
+      <div className="cardTitle" style={textStyle}>{t("home.shortcuts")}</div>
       <div className="list">
-        <button className="linkBtn" type="button" onClick={() => router.push("/home")}>{t("home.feed")}</button>
-        <button className="linkBtn" type="button" onClick={() => router.push("/explore")}>{t("home.explore")}</button>
-        <button className="linkBtn" type="button" onClick={() => router.push("/messages")} style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <button className="linkBtn" type="button" style={textStyle} onClick={() => router.push("/home")}>{t("home.feed")}</button>
+        <button className="linkBtn" type="button" style={textStyle} onClick={() => router.push("/explore")}>{t("home.explore")}</button>
+        <button className="linkBtn" type="button" onClick={() => router.push("/messages")} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", ...textStyle }}>
           {t("home.messages")}
           {unreadCount > 0 && (
             <span style={{
@@ -57,10 +67,10 @@ export default function LeftSidebar() {
             }}>{unreadCount}</span>
           )}
         </button>
-        <button className="linkBtn" type="button" onClick={() => router.push("/settings")}>{t("home.settings")}</button>
+        <button className="linkBtn" type="button" style={textStyle} onClick={() => router.push("/settings")}>{t("home.settings")}</button>
         {isAdmin && (
-          <button className="linkBtn" type="button" onClick={() => router.push("/admin")} style={{ color: "var(--accent)", fontWeight: 700 }}>
-            Admin Panel
+          <button className="linkBtn" type="button" onClick={() => router.push("/admin")} style={{ color: "var(--accent)", fontWeight: 700, ...textStyle }}>
+            {t("home.admin_panel")}
           </button>
         )}
       </div>

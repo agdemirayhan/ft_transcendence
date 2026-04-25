@@ -65,6 +65,7 @@
     "following": "Following",
     "edit_profile": "Edit Profile",
     "shortcuts": "Shortcuts",
+    "admin_panel": "Admin Panel",
     "feed": "Home",
     "empty_feed": "No posts from people you follow yet.",
     "comments": "Comments",
@@ -81,7 +82,9 @@
     "share": "Share",
     "just_now": "just now",
     "show_more": "Show more",
-    "show_less": "Show less"
+    "show_less": "Show less",
+    "logout": "Log out",
+    "logout_confirm": "Are you sure you want to log out?"
   },
   "post": {
     "edit": "Edit",

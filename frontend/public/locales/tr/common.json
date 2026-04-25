@@ -64,6 +64,7 @@
     "followers": "Takipçi",
     "following": "Takip",
     "edit_profile": "Profili Düzenle",
+    "admin_panel": "Yönetici Paneli",
     "shortcuts": "Kısayollar",
     "feed": "Ana Sayfa",
     "empty_feed": "Takip ettiğin kişilerden henüz gönderi yok.",
@@ -81,7 +82,9 @@
     "share": "Paylaş",
     "just_now": "şimdi",
     "show_more": "Devamını gör",
-    "show_less": "Daha az göster"
+    "show_less": "Daha az göster",
+    "logout": "Çıkış Yap",
+    "logout_confirm": "Çıkış yapmak istediğinizden emin misiniz?"
   },
   "post": {
     "edit": "Düzenle",
