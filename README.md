@@ -111,25 +111,43 @@ Message
 
 ---
 
-## Chosen Modules & Justifications -- Needs to be revised
+## Chosen Modules & Justifications
 
 ### Major Modules (2 point each)
 
 | Module | Justification |
 |---|---|
-| **Standard User Management** | Full user lifecycle: registration, profile editing, avatar upload, follow/unfollow, stats display |
-| **Two-Factor Authentication (2FA) + JWT** | TOTP-based 2FA with QR code setup; JWT for all protected endpoints |
-| **Remote Authentication (OAuth2)** | Google OAuth2 integration for frictionless login |
-| **Live Chat** | Real-time direct messaging with online status, read receipts, and message sorting |
+| **Standard User Management** | Profile editing, avatar upload (with default fallback), follow/unfollow with online status display, dedicated profile pages per user |
+| **Advanced Permissions System** | Admin role with full user CRUD (view, edit role/avatar/bio, delete); post moderation; admin-only panel hidden from regular users |
+| **WebSocket Real-Time Features** | Socket.io gateway with JWT auth; real-time message delivery, graceful connect/disconnect handling, direct socket targeting |
+| **User Interaction** | Real-time chat between users; profile pages with avatar/bio/stats; follow/unfollow system with friends list |
 
-### Minor Modules (1 points each)
+### Minor Modules (1 point each)
 
 | Module | Justification |
 |---|---|
-| **Multiple Language Support** | 4 languages (EN, TR, DE, AR); Arabic includes RTL text direction |
-| **Server-Side Rendering** | Next.js App Router provides SSR for initial page loads; improves performance and SEO |
+| **Multiple Language Support** | 4 complete translations (EN, TR, DE, AR) via react-i18next; language switcher in settings; all user-facing text translatable |
+| **RTL Language Support** | Arabic (AR) with full RTL layout; seamless LTR↔RTL switching |
+| **Frontend Framework** | React used for the entire frontend; component-based UI |
+| **Backend Framework** | NestJS used for the entire backend; modular architecture with decorators and guards |
+| **ORM** | Prisma ORM for all database access; type-safe queries, schema-as-code, auto-generated migrations |
+| **File Upload & Management** | Image upload (PNG/JPEG) with server-side type and size validation (5MB limit); JWT-protected endpoints; ownership-checked file deletion; inline file serving |
+| **Additional Browser Support** | Tested on Chrome and Firefox; all features functional in both; WebKit scrollbar styling not visible in Firefox (cosmetic only) |
+| **2FA System** | TOTP-based 2FA via QR code (Google Authenticator compatible); enable/disable in settings; enforced on login when enabled |
 
-### Total: **[X] major + [X] minor = [X] points**
+### Total: **[4] major + [8] minor = [16] points**
+
+---
+
+## Browser Compatibility
+
+| Browser | Tested | Notes |
+|---|---|---|
+| Chrome 120+ | ✓ | Full support |
+| Firefox 121+ | ✓ | Custom scrollbar styling not applied (cosmetic only); all features functional |
+
+### Known Limitations
+- `*::-webkit-scrollbar` CSS is Chrome/Edge/Safari only — Firefox shows the default system scrollbar instead.
 
 ---
 
