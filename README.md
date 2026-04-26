@@ -8,7 +8,7 @@ A full-stack social media web application built as part of the 42 School curricu
 
 | Name | Login | Role |
 |------|-------|------|
-| Ayhan |  | Project Manager / Developer |
+| Ayhan | aagdemir | Project Manager / Developer |
 | Manuel | mhummel | Developer |
 | Leon | ldick | Developer |
 | Taha | tkirmizi | Product Owner / Developer |
