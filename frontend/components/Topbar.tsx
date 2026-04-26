@@ -8,7 +8,8 @@ import "../app/i18n";
 
 export default function Topbar() {
   const router = useRouter();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isRTL = i18n.language === "ar";
   const [searchQuery, setSearchQuery] = useState("");
   const [showLogout, setShowLogout] = useState(false);
 
@@ -41,6 +42,7 @@ export default function Topbar() {
             placeholder={t("home.search")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            dir={isRTL ? "rtl" : "ltr"}
           />
           <button className="btn btnSmall" type="submit">
             {t("home.search_btn")}

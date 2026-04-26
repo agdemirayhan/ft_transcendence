@@ -76,7 +76,8 @@ function PostComposer({ onPost, username, avatarUrl }: { onPost: (content: strin
   const [text, setText] = useState("");
   const [attachment, setAttachment] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isRTL = i18n.language === "ar";
 
   async function submit(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -107,7 +108,7 @@ function PostComposer({ onPost, username, avatarUrl }: { onPost: (content: strin
             rows={3}
             maxLength={240}
             disabled={isLoading}
-            dir="auto"
+            dir={isRTL ? "rtl" : "auto"}
           />
         </div>
         <div className="composerBottom">
@@ -335,7 +336,7 @@ export default function Home() {
             {posts.length === 0 ? (
               <Card>
                 <div style={{ padding: "20px", textAlign: "center", color: "var(--muted)" }}>
-                  No posts yet. Be the first to post!
+                  {t("home.empty_feed")}
                 </div>
               </Card>
             ) : (

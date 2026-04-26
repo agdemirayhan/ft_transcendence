@@ -183,13 +183,18 @@ Message
 ## Running the Project
 
 ```bash
-# 1. Copy environment variables
+# 1. Generate SSL certificates
+bash generate-certs.sh
+
+# 2. Copy environment variables
 cp .env.example .env
 
-# 2. Start all services
+# 3. Start all services
 docker compose up --build
 
 # Frontend: http://localhost:3001
-# Backend:  http://localhost:3000
+# Backend:  https://localhost:3000
 # pgAdmin:  http://localhost:5050
 ```
+
+> **Note:** The backend uses a self-signed certificate. On first visit to `https://localhost:3000`, browsers will show a security warning — click "Advanced → Proceed" to continue.
