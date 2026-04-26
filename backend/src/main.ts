@@ -7,9 +7,11 @@ import { NestExpressApplication } from "@nestjs/platform-express";
 
 async function bootstrap() {
   const certPath = path.join(process.cwd(), "certs");
+  const keyPath = process.env.HTTPS_KEY_PATH || path.join(certPath, "key.pem");
+  const certFilePath = process.env.HTTPS_CERT_PATH || path.join(certPath, "cert.pem");
   const httpsOptions = {
-    key: fs.readFileSync(path.join(certPath, "key.pem")),
-    cert: fs.readFileSync(path.join(certPath, "cert.pem")),
+    key: fs.readFileSync(keyPath),
+    cert: fs.readFileSync(certFilePath),
   };
 
   const app = await NestFactory.create<NestExpressApplication>(AppModule, { httpsOptions });

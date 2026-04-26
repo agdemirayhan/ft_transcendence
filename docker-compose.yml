@@ -29,21 +29,38 @@ services:
       DATABASE_URL: "postgresql://${POSTGRES_USER:-transcendence}:${POSTGRES_PASSWORD:-transcendence}@db:5432/${POSTGRES_DB:-transcendence}?schema=public"
       PORT: "${BACKEND_PORT:-3000}"
       JWT_SECRET: "${JWT_SECRET:-dev-only-change-me}"
+      HTTPS_KEY_PATH: "/app/certs/key.pem"
+      HTTPS_CERT_PATH: "/app/certs/cert.pem"
+    expose:
+      - "3000"
+    command: sh -c "npx prisma db push && npx prisma db seed && npm run start:prod"
+
+  backend-https:
+    image: caddy:2-alpine
+    container_name: ft_transcendence_backend_https
+    restart: unless-stopped
+    depends_on:
+      - backend
     ports:
-      - "${BACKEND_PORT:-3000}:3000"
-    command: sh -c "mkdir -p certs && [ -f certs/cert.pem ] || openssl req -x509 -newkey rsa:4096 -keyout certs/key.pem -out certs/cert.pem -days 365 -nodes -subj '/CN=localhost' && npx prisma db push && npx prisma db seed && npm run start:prod"
+      - "${BACKEND_HTTPS_PORT:-3443}:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
 
   frontend:
     build:
       context: ./frontend
+      args:
+        NEXT_PUBLIC_API_URL: "https://localhost:${BACKEND_HTTPS_PORT:-3443}"
     container_name: ft_transcendence_frontend
     restart: unless-stopped
     depends_on:
-      - backend
+      - backend-https
     env_file:
       - .env
     environment:
-      NEXT_PUBLIC_API_URL: "https://localhost:${BACKEND_PORT:-3000}"
+      NEXT_PUBLIC_API_URL: "https://localhost:${BACKEND_HTTPS_PORT:-3443}"
     ports:
       - "${FRONTEND_PORT:-3001}:3000"
 
@@ -61,3 +78,5 @@ services:
 
 volumes:
   postgres_data:
+  caddy_data:
+  caddy_config:
