@@ -190,6 +190,6 @@ cp .env.example .env
 docker compose up --build
 
 # Frontend: http://localhost:3001
-# Backend:  http://localhost:3000
+# Backend:  https://localhost:3000
 # pgAdmin:  http://localhost:5050
 ```

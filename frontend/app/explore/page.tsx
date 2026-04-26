@@ -141,7 +141,7 @@ export default function Explore() {
             {posts.length === 0 ? (
               <Card>
                 <div style={{ padding: "20px", textAlign: "center", color: "var(--muted)" }}>
-                  No posts to explore yet.
+                  {t("home.empty_explore")}
                 </div>
               </Card>
             ) : (

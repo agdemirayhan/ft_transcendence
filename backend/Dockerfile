@@ -11,6 +11,7 @@ RUN npx prisma generate
 
 COPY tsconfig*.json nest-cli.json ./
 COPY src ./src
+COPY certs ./certs
 
 RUN npm run build
 

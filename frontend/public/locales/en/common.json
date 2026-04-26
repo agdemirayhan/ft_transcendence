@@ -68,6 +68,7 @@
     "admin_panel": "Admin Panel",
     "feed": "Home",
     "empty_feed": "No posts from people you follow yet.",
+    "empty_explore": "No posts to explore yet.",
     "comments": "Comments",
     "write_comment": "Write a comment...",
     "send": "Send",
