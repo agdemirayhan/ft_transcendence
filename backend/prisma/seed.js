@@ -109,24 +109,6 @@ const commentVoice = [
   "Looks good to merge.",
 ];
 
-const dmOpeners = [
-  "Are you online?",
-  "Can you check something quickly?",
-  "I just pushed, did you see it?",
-  "Want to do one more check before demo?",
-  "Are you seeing the same error?",
-  "After coffee, let's dive into this bug.",
-];
-
-const dmReplies = [
-  "Yep, I saw it. Looking now.",
-  "Same here, sending logs now.",
-  "Tested locally, works on my side.",
-  "Send the PR and I will merge it.",
-  "Give me two minutes, tests are finishing.",
-  "Agreed, this version is safer.",
-];
-
 function createRng(seed = 42) {
   let value = seed;
   return () => {
@@ -247,14 +229,6 @@ async function main() {
       ],
     },
   });
-  await prisma.message.deleteMany({
-    where: {
-      OR: [
-        { senderId: { in: seededUserIds } },
-        { receiverId: { in: seededUserIds } },
-      ],
-    },
-  });
   await prisma.follow.deleteMany({
     where: {
       OR: [
@@ -358,47 +332,6 @@ async function main() {
     skipDuplicates: true,
   });
 
-  const messageRows = [];
-  const pairs = [
-    ["ayhan", "tkirmizi"],
-    ["ayhan", "mhummel"],
-    ["tkirmizi", "ldick"],
-    ["mhummel", "ldick"],
-    ["noraellis", "mikehansen"],
-    ["zoepark", "lucasreed"],
-    ["alinafox", "omarstone"],
-    ["ivyng", "danielcho"],
-    ["sarahmiles", "kevinhartz"],
-  ];
-
-  for (const [a, b] of pairs) {
-    const aId = userIdByUsername[a];
-    const bId = userIdByUsername[b];
-    const messageCount = 6 + Math.floor(rng() * 7);
-    let senderId = rng() > 0.5 ? aId : bId;
-    let receiverId = senderId === aId ? bId : aId;
-    for (let i = 0; i < messageCount; i += 1) {
-      const body = i === 0 ? pick(rng, dmOpeners) : pick(rng, dmReplies);
-      const withTag = rng() > 0.7 ? `${body} #${pick(rng, hashtags)}` : body;
-      messageRows.push({
-        senderId,
-        receiverId,
-        content: withTag,
-        createdAt: daysAgo(Math.floor(rng() * 14), Math.floor(rng() * 1440)),
-      });
-      if (rng() > 0.35) {
-        const tmp = senderId;
-        senderId = receiverId;
-        receiverId = tmp;
-      }
-    }
-  }
-
-  await prisma.message.createMany({
-    data: messageRows,
-    skipDuplicates: true,
-  });
-
   const topTrends = [...hashtagCounter.entries()]
     .sort((a, b) => b[1] - a[1])
     .slice(0, 5)
@@ -410,7 +343,6 @@ async function main() {
 - likes: ${likeRows.length}
 - comments: ${commentRows.length}
 - follows: ${followRows.length}
-- messages: ${messageRows.length}
 - top trends: ${topTrends.join(", ")}`);
 }
 
