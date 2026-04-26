@@ -1,4 +1,8 @@
 localhost {
   tls internal
-  reverse_proxy backend:3000
+  reverse_proxy https://backend:3000 {
+    transport http {
+      tls_insecure_skip_verify
+    }
+  }
 }

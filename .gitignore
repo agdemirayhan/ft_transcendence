@@ -2,6 +2,7 @@ node_modules
 dist
 .env
 backend/.env
+backend/certs/
 backend/dist
 backend/node_modules
 *.Identifier
