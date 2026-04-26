@@ -1,4 +1,7 @@
-# miniSocial — ft_transcendence
+*This project has been created as part of the 42 curriculum by tkirmizi, mhummel, aagdemir, ldick*
+
+
+# Description — miniSocial
 
 A full-stack social media web application built as part of the 42 School curriculum. Users can post content, follow each other, chat in real time, and interact through likes, comments, and hashtags — all within a secure, multi-language interface.
 
@@ -21,7 +24,7 @@ Work was organized using a **Git branching workflow** with feature branches merg
 
 ---
 
-## Technologies Used
+## Resources
 
 | Technology | Purpose | Justification |
 |---|---|---|
@@ -177,7 +180,7 @@ Message
 
 ---
 
-## Running the Project
+## Instructions
 
 ```bash
 # 1. Generate SSL certificates
@@ -192,6 +195,13 @@ docker compose up --build
 # Frontend: http://localhost:3001
 # Backend:  https://localhost:3000
 # pgAdmin:  http://localhost:5050
+```
+## Prerequisites
+```Bash
+Docker: 24.x+
+Docker Compose: v2.x
+Node.js: 20.0.0+
+npm: 10.x+
 ```
 
 > **Note:** The backend uses a self-signed certificate. On first visit to `https://localhost:3000`, browsers will show a security warning — click "Advanced → Proceed" to continue.
