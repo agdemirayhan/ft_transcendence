@@ -183,23 +183,21 @@ export default function MessagesPage() {
 
   return (
     <div className="page">
-      {/* Topbar */}
       <Topbar />
 
-      {/* Body */}
-      <div style={{ flex: 1, display: 'flex', justifyContent: 'center', padding: '8px 32px 24px', overflow: 'hidden' }}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '70%', height: '70vh', minHeight: 0 }}>
-        <div className="profileTabs">
-          <button type="button" className="profileTab active">{t('messages.title')}</button>
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '220px 1fr', gap: 12, flex: 1, minHeight: 0 }}>
-
-        {/* Sidebar */}
-        <div className="card" style={{ display: 'flex', flexDirection: 'column', padding: 0, minHeight: 0, height: '100%' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderBottom: '1px solid var(--border)' }}>
-            <span className="cardTitle" style={{ margin: 0 }}>{t('messages.chats')}</span>
-            <button className="btn btnSmall" type="button" onClick={openNewChat}>+ {t('messages.new_message')}</button>
+      <div className="msgLayout">
+        <div className="msgInner">
+          <div className="profileTabs">
+            <button type="button" className="profileTab active">{t('messages.title')}</button>
           </div>
+          <div className="msgGrid">
+
+          {/* Sidebar */}
+          <div className={`card msgSidebar${selectedId ? ' msgSidebarHidden' : ''}`} style={{ display: 'flex', flexDirection: 'column', padding: 0, minHeight: 0, height: '100%' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderBottom: '1px solid var(--border)' }}>
+              <span className="cardTitle" style={{ margin: 0 }}>{t('messages.chats')}</span>
+              <button className="btn btnSmall" type="button" onClick={openNewChat}>+ {t('messages.new_message')}</button>
+            </div>
 
           {showNewChat && (
             <div style={{ borderBottom: '1px solid var(--border)', padding: 8, display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -281,25 +279,26 @@ export default function MessagesPage() {
           </div>
         </div>
 
-        {/* Chat area */}
-        <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0, height: '100%' }}>
-          <div className="card" style={{ display: 'flex', flexDirection: 'column', padding: 0, minHeight: 0, flex: 1 }}>
-          {selectedUser ? (
-            <>
-              {/* Chat header */}
-              <div style={{
-                display: 'flex', alignItems: 'center', gap: 12,
-                padding: '12px 16px', borderBottom: '1px solid var(--border)',
-              }}>
-                <Avatar name={selectedUser.username} avatarUrl={selectedUser.avatarUrl} />
-                <div>
-                  <div style={{ fontWeight: 800 }}>{selectedUser.username}</div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                    <span style={{ width: 7, height: 7, borderRadius: '50%', background: selectedUser.isOnline ? 'var(--accent2)' : 'var(--muted)', display: 'inline-block' }} />
-                    <span className="muted">{selectedUser.isOnline ? t('messages.online') : t('messages.offline')}</span>
+          {/* Chat area */}
+          <div className={`msgChat${selectedId ? ' msgChatActive' : ''}`}>
+            <div className="card" style={{ display: 'flex', flexDirection: 'column', padding: 0, minHeight: 0, flex: 1 }}>
+            {selectedUser ? (
+              <>
+                {/* Chat header */}
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: 12,
+                  padding: '12px 16px', borderBottom: '1px solid var(--border)',
+                }}>
+                  <button className="msgBackBtn" type="button" onClick={() => setSelectedId(null)}>←</button>
+                  <Avatar name={selectedUser.username} avatarUrl={selectedUser.avatarUrl} />
+                  <div>
+                    <div style={{ fontWeight: 800 }}>{selectedUser.username}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                      <span style={{ width: 7, height: 7, borderRadius: '50%', background: selectedUser.isOnline ? 'var(--accent2)' : 'var(--muted)', display: 'inline-block' }} />
+                      <span className="muted">{selectedUser.isOnline ? t('messages.online') : t('messages.offline')}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
 
               {/* Messages */}
               <div ref={messagesContainerRef} style={{ flex: 1, overflowY: 'auto', padding: '16px 20px', paddingRight: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -358,10 +357,11 @@ export default function MessagesPage() {
             <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <span className="muted">{t('messages.select')}</span>
             </div>
-          )}
+            )}
+            </div>
           </div>
-        </div>
-        </div>
+
+          </div>
         </div>
       </div>
     </div>

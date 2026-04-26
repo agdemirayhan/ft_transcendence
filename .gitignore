@@ -6,5 +6,4 @@ backend/certs/
 backend/dist
 backend/node_modules
 *.Identifier
-SUNUM_AYHAN.md
 certs

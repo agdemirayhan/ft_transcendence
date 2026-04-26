@@ -289,9 +289,6 @@ export default function Post({
             <button className="btn btnSmall" onClick={() => setShowCommentBox((v) => !v)} type="button">
               {t("home.comment")}
             </button>
-            <button className="ghostBtn" onClick={() => alert("We'll add this later 🙂")} type="button">
-              {t("home.share")}
-            </button>
           </div>
         </div>
 
