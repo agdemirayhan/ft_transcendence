@@ -8,7 +8,7 @@ A full-stack social media web application built as part of the 42 School curricu
 
 | Name | Login | Role |
 |------|-------|------|
-| Ayhan | aagdemir | Project Manager / Developer |
+| Ayhan |  | Project Manager / Developer |
 | Manuel | mhummel | Developer |
 | Leon | ldick | Developer |
 | Taha | tkirmizi | Product Owner / Developer |
@@ -88,26 +88,23 @@ Message
 |---|---|---|
 | Signup / Login | Email + password auth with JWT cookie | Manuel |
 | JWT Authentication | Stateless token-based session management | Manuel |
-| Two-Factor Authentication | TOTP via QR code (Google Authenticator) | Leon Dick |
-| Google OAuth2 | Sign in with Google | Leon Dick |
-| User Profiles | Avatar upload, bio editing, follower/following counts | Ayhan Agdemir |
-| Follow / Unfollow | Social graph with follower/following lists | Taha Kirmizi |
-| Post Creation | Text posts + image attachments (PNG/JPEG) | Taha Kirmizi / Leon Dick |
-| Post Feed | Chronological feed from followed users | Ayhan Agdemir |
-| Likes | Toggle like on posts with optimistic UI | Taha Kirmizi / Ayhan Agdemir |
-| Comments | Add and view comments per post | Taha Kirmizi / Ayhan Agdemir |
-| Explore Page | Discover posts from non-followed users | Ayhan Agdemir |
-| Real-Time Chat | Direct messages between users with online/offline status | Manuel / Ayhan Agdemir |
-| Unread Message Badge | Live unread count with 5-second polling | Ayhan Agdemir |
-| Hashtag Search | Search posts by `#hashtag`, users by `@username` | Ayhan Agdemir |
-| Trending Hashtags | Most-used hashtags surfaced in sidebar | Ayhan Agdemir |
-| Admin Panel | User management dashboard (admin role only) | Ayhan Agdemir |
-| Settings Page | Language selection, 2FA toggle, account deletion | Ayhan Agdemir |
-| Multi-Language UI | English, Turkish, German, Arabic (with RTL text support) | Ayhan Agdemir |
-| Privacy Policy / ToS | Modal dialogs on the auth page | Ayhan Agdemir |
-| Profile Card | Summary card with stats on home page | Ayhan Agdemir |
-| Responsive Layout | Adaptive sidebar layout for varying screen widths | Ayhan Agdemir |
-| Docker Setup | Full containerized dev environment | Ayhan Agdemir / Manuel |
+| Two-Factor Authentication | TOTP via QR code (Google Authenticator) | Leon |
+| Google OAuth2 | Sign in with Google | Leon |
+| User Profiles | Avatar upload, bio editing, follower/following counts | Ayhan |
+| Follow / Unfollow | Social graph with follower/following lists | Taha |
+| Post Creation | Text posts + image attachments (PNG/JPEG) | Taha / Leon / Ayhan |
+| Post Feed | Chronological feed from followed users | Ayhan |
+| Likes | Toggle like on posts with optimistic UI | Taha / Ayhan |
+| Comments | Add and view comments per post | Taha / Ayhan |
+| Explore Page | Discover posts from non-followed users | Ayhan |
+| Real-Time Chat | Direct messages between users with online/offline status | Manuel / Ayhan |
+| Unread Message Badge | Live unread count with 5-second polling | Ayhan |
+| Hashtag Search | Search posts by `#hashtag`, users by `@username` | Ayhan |
+| Trending Hashtags | Most-used hashtags surfaced in sidebar | Ayhan |
+| Admin Panel | User management dashboard (admin role only) | Ayhan |
+| Settings & UI | Language selection (EN/TR/DE/AR + RTL), 2FA toggle, account deletion, Privacy Policy/ToS modals, profile stats card | Ayhan |
+| Responsive Layout | Adaptive sidebar layout for varying screen widths | Ayhan |
+| Docker Setup | Full containerized dev environment | Ayhan / Manuel |
 
 ---
 
@@ -153,7 +150,7 @@ Message
 
 ## Individual Contributions
 
-### Ayhan Agdemir — Project Manager / Developer
+### Ayhan — Project Manager / Developer
 - Designed and built the entire frontend architecture (Next.js App Router, component library, CSS design system)
 - Implemented home feed, explore page, search, profile pages, messages UI, settings page, admin panel
 - Built social features: post composer, like/comment UI, follow modals, trending hashtags
@@ -166,13 +163,13 @@ Message
 - Set up the initial NestJS project structure and auth guards
 - Wrote initial README and infrastructure documentation
 
-### Leon Dick — Developer
+### Leon — Developer
 - Implemented Two-Factor Authentication (TOTP, QR code generation, verification endpoint)
 - Integrated Google OAuth2
 - Built image/file upload backend endpoints and database model
 - Added attachment UI to the post composer
 
-### Taha Kirmizi — Product Owner / Developer
+### Taha — Product Owner / Developer
 - Built posts, likes, and comments backend (controllers, services, DTOs)
 - Implemented follow/unfollow system with follower/following endpoints
 - Designed and maintained Prisma seed data
